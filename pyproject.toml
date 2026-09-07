@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "adsefid"
+version = "0.1.0"
+description = "Python client SDK for the adsefid.com SMS Web Service API"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "adsefid.com" }]
+keywords = ["sms", "messenger", "adsefid", "webservice"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.6", "mypy>=1.11", "build>=1.2"]
+examples = ["flask"]
+
+[project.urls]
+Homepage = "https://github.com/adsefid/sdk-python"
+Repository = "https://github.com/adsefid/sdk-python"
+Issues = "https://github.com/adsefid/sdk-python/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/adsefid"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["examples", ".venv", ".mypy_cache", ".ruff_cache"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+strict = true
+packages = ["adsefid"]
