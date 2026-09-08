@@ -50,7 +50,7 @@ class SendSingleSmsResult:
     raw_status: int
     line_number: str
     line_selector: LineSelector
-    cost: int
+    cost: float
     receptor: str
     send_time: datetime | None
     message_id: str
@@ -67,7 +67,7 @@ class SendSingleSmsResult:
             raw_status=raw_status,
             line_number=data["line_number"],
             line_selector=LineSelector(data["line_selector"]),
-            cost=data["cost"],
+            cost=float(data["cost"]),
             receptor=data["receptor"],
             send_time=parse_datetime(data.get("send_time")),
             message_id=data["message_id"],
@@ -125,7 +125,7 @@ class BulkReceptorResult:
     status: WebServiceMessageStatus | None
     raw_status: int
     hide: bool
-    cost: int
+    cost: float
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> BulkReceptorResult:
@@ -137,7 +137,7 @@ class BulkReceptorResult:
             status=status,
             raw_status=raw_status,
             hide=data["hide"],
-            cost=data["cost"],
+            cost=float(data["cost"]),
         )
 
 
@@ -152,7 +152,7 @@ class SendBulkSmsResult:
     line_selector: LineSelector
     counts: dict[str, int]
     total_count: int
-    total_cost: int
+    total_cost: float
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> SendBulkSmsResult:
@@ -166,7 +166,7 @@ class SendBulkSmsResult:
             line_selector=LineSelector(data["line_selector"]),
             counts=dict(data.get("counts", {})),
             total_count=data["total_count"],
-            total_cost=data["total_cost"],
+            total_cost=float(data["total_cost"]),
         )
 
 
@@ -220,7 +220,7 @@ class P2pMessageResult:
     message: str
     hide: bool
     segment_count: int
-    cost: int
+    cost: float
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> P2pMessageResult:
@@ -234,7 +234,7 @@ class P2pMessageResult:
             message=data["message"],
             hide=data["hide"],
             segment_count=data["segment_count"],
-            cost=data["cost"],
+            cost=float(data["cost"]),
         )
 
 
@@ -245,7 +245,7 @@ class SendP2pSmsResult:
     send_time: datetime | None
     line_number: str
     line_selector: LineSelector
-    total_cost: int
+    total_cost: float
     counts: dict[str, int]
 
     @classmethod
@@ -256,7 +256,7 @@ class SendP2pSmsResult:
             send_time=parse_datetime(data.get("send_time")),
             line_number=data["line_number"],
             line_selector=LineSelector(data["line_selector"]),
-            total_cost=data["total_cost"],
+            total_cost=float(data["total_cost"]),
             counts=dict(data.get("counts", {})),
         )
 
@@ -304,7 +304,7 @@ class SendSmsTemplateResult:
     send_time: datetime | None
     expiry_date: datetime | None
     line_selector: LineSelector
-    cost: int
+    cost: float
     receptor: str
     message: str
     segment_count: int
@@ -324,7 +324,7 @@ class SendSmsTemplateResult:
             send_time=parse_datetime(data.get("send_time")),
             expiry_date=parse_datetime(data.get("expiry_date")),
             line_selector=LineSelector(data["line_selector"]),
-            cost=data["cost"],
+            cost=float(data["cost"]),
             receptor=data["receptor"],
             message=data["message"],
             segment_count=data["segment_count"],

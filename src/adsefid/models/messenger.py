@@ -51,7 +51,7 @@ class SendSingleMessengerResult:
     receptor: str
     local_id: str | None
     hide: bool
-    cost: int
+    cost: float
     send_time: datetime | None
     profile: str
     messenger: str
@@ -67,7 +67,7 @@ class SendSingleMessengerResult:
             receptor=data["receptor"],
             local_id=data.get("local_id"),
             hide=data["hide"],
-            cost=data["cost"],
+            cost=float(data["cost"]),
             send_time=parse_datetime(data.get("send_time")),
             profile=data["profile"],
             messenger=data["messenger"],
@@ -123,7 +123,7 @@ class MessengerBulkReceptorResult:
     hide: bool
     status: WebServiceMessageStatus | None
     raw_status: int
-    cost: int
+    cost: float
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> MessengerBulkReceptorResult:
@@ -135,7 +135,7 @@ class MessengerBulkReceptorResult:
             hide=data["hide"],
             status=status,
             raw_status=raw_status,
-            cost=data["cost"],
+            cost=float(data["cost"]),
         )
 
 
@@ -146,7 +146,7 @@ class SendBulkMessengerResult:
     message: str
     send_time: datetime | None
     total_count: int
-    total_cost: int
+    total_cost: float
     counts: dict[str, int]
     profile: str
     messenger: str
@@ -159,7 +159,7 @@ class SendBulkMessengerResult:
             message=data["message"],
             send_time=parse_datetime(data.get("send_time")),
             total_count=data["total_count"],
-            total_cost=data["total_cost"],
+            total_cost=float(data["total_cost"]),
             counts=dict(data.get("counts", {})),
             profile=data["profile"],
             messenger=data["messenger"],
@@ -215,7 +215,7 @@ class MessengerP2pReceptorResult:
     hide: bool
     status: WebServiceMessageStatus | None
     raw_status: int
-    cost: int
+    cost: float
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> MessengerP2pReceptorResult:
@@ -228,7 +228,7 @@ class MessengerP2pReceptorResult:
             hide=data["hide"],
             status=status,
             raw_status=raw_status,
-            cost=data["cost"],
+            cost=float(data["cost"]),
         )
 
 
@@ -238,7 +238,7 @@ class SendP2pMessengerResult:
     receptors: list[MessengerP2pReceptorResult]
     send_time: datetime | None
     total_count: int
-    total_cost: int
+    total_cost: float
     counts: dict[str, int]
     profile: str
     messenger: str
@@ -250,7 +250,7 @@ class SendP2pMessengerResult:
             receptors=[MessengerP2pReceptorResult.from_dict(item) for item in data["receptors"]],
             send_time=parse_datetime(data.get("send_time")),
             total_count=data["total_count"],
-            total_cost=data["total_cost"],
+            total_cost=float(data["total_cost"]),
             counts=dict(data.get("counts", {})),
             profile=data["profile"],
             messenger=data["messenger"],
@@ -328,7 +328,7 @@ class SendMessengerTemplateResult:
     template_id: str
     send_time: datetime | None
     expiry_date: datetime | None
-    cost: int
+    cost: float
     receptor: str
     message: str
     profile: str
@@ -347,7 +347,7 @@ class SendMessengerTemplateResult:
             template_id=data["template_id"],
             send_time=parse_datetime(data.get("send_time")),
             expiry_date=parse_datetime(data.get("expiry_date")),
-            cost=data["cost"],
+            cost=float(data["cost"]),
             receptor=data["receptor"],
             message=data["message"],
             profile=data["profile"],
