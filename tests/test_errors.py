@@ -70,18 +70,65 @@ async def test_error_envelopes_map_to_typed_exceptions(
     assert isinstance(error, AdsefidRateLimitError) is rate_limited
 
 
-async def test_details_survive_intact(make_client) -> None:
+async def test_validation_details_survive_intact(make_client) -> None:
+    """The real shape of a validation failure: a field-to-message map under
+    `errors`, with plain string values."""
     client, _ = make_client(
         status_code=400, content=fixture_bytes("errors/error.invalid_parameter.json")
     )
 
     with pytest.raises(AdsefidApiError) as caught:
-        await unwrap(client.user.get_info())
+        await unwrap(client.user.get_templates())
 
     assert caught.value.details == {
-        "take": ["must be between 1 and 100"],
-        "state": ["must be one of pendingapproval, approved, rejected"],
+        "errors": {
+            "take": "invalid value for take",
+            "state": "invalid value for state",
+        }
     }
+
+
+@pytest.mark.parametrize(
+    ("fixture", "expected"),
+    [
+        pytest.param(
+            "errors/error.details_single.json",
+            {"receptor": "invalid value for receptor"},
+            id="single send is a flat field to message map",
+        ),
+        pytest.param(
+            "errors/error.details_bulk.json",
+            {
+                "errors": {"line_number": "invalid value for line_number"},
+                "messages": [
+                    {"index": 0, "errors": {"receptor": "invalid value for receptor"}},
+                    {
+                        "index": 2,
+                        "errors": {
+                            "local_id": "invalid value for local_id",
+                            "message": "invalid value for message",
+                        },
+                    },
+                ],
+            },
+            id="bulk carries per-item errors keyed by index",
+        ),
+        pytest.param(
+            "errors/error.details_cancel.json",
+            {"local_ids": ["order-10001", "order-10002"]},
+            id="cancel is the one shape whose values are arrays",
+        ),
+    ],
+)
+async def test_every_details_shape_survives_unchanged(make_client, fixture, expected) -> None:
+    """`details` is deliberately untyped because the service uses a different
+    shape per endpoint. Each real shape must come through uncoerced."""
+    client, _ = make_client(status_code=400, content=fixture_bytes(fixture))
+
+    with pytest.raises(AdsefidApiError) as caught:
+        await unwrap(client.user.get_info())
+
+    assert caught.value.details == expected
 
 
 async def test_an_unmapped_code_is_carried_through_not_rejected(make_client) -> None:
