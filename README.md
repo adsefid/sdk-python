@@ -283,7 +283,7 @@ Return a `2xx` quickly and process asynchronously where possible — the platfor
 This SDK follows Semantic Versioning independently of the API documentation.
 
 - SDK version: **`0.3.0`** (`version` in `pyproject.toml`; `adsefid.__version__` reads package metadata)
-- Verified API documentation: **`v1.11.0`**
+- Verified API documentation: **`v1.12.0`**
 
 SDK releases use `v<SDK_VERSION>` tags. The two version numbers move independently.
 
