@@ -12,7 +12,8 @@ LOCAL_ID_PATTERN = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9\-_.:]{0,34}[A-Za-z0-9])?
 SMS_MESSAGE_MAX_LENGTH = 900
 MESSENGER_MESSAGE_MAX_LENGTH = 4000
 MAX_STATUS_IDS = 2000
-MAX_RECEIVE_COUNT = 500
+MIN_RECEIVE_COUNT = 1
+MAX_RECEIVE_COUNT = 499
 MIN_TEMPLATE_TAKE = 1
 MAX_TEMPLATE_TAKE = 100
 
@@ -39,7 +40,12 @@ def join_csv(values: Sequence[str] | None) -> str | None:
 
 
 def validate_local_id(local_id: str | None, *, field_name: str = "local_id") -> None:
-    if local_id is None:
+    """Validate an optional local_id.
+
+    The service normalizes a blank value to "not supplied" before validating,
+    so `None`, `""` and whitespace-only are all accepted and simply omitted.
+    """
+    if local_id is None or not local_id.strip():
         return
     if not LOCAL_ID_PATTERN.match(local_id):
         raise AdsefidValidationError(
@@ -53,10 +59,21 @@ def validate_non_empty(value: str | None, *, field_name: str) -> None:
         raise AdsefidValidationError(f"{field_name!r} is required and must be non-empty")
 
 
+def utf16_length(value: str) -> int:
+    """Length of `value` in UTF-16 code units.
+
+    The service counts its length limits in UTF-16 code units, so a character
+    outside the Basic Multilingual Plane (an emoji, say) costs two. Python's
+    `len()` counts code points and would accept a message the service rejects.
+    """
+    return len(value.encode("utf-16-le")) // 2
+
+
 def validate_max_length(value: str, *, field_name: str, max_length: int) -> None:
-    if len(value) > max_length:
+    length = utf16_length(value)
+    if length > max_length:
         raise AdsefidValidationError(
-            f"{field_name!r} must be at most {max_length} characters; got {len(value)}"
+            f"{field_name!r} must be at most {max_length} characters; got {length}"
         )
 
 
@@ -98,8 +115,10 @@ def validate_skip(skip: int | None) -> None:
 def validate_receive_count(count: int | None) -> None:
     if count is None:
         return
-    if not (0 < count < MAX_RECEIVE_COUNT):
-        raise AdsefidValidationError(f"'count' must be < {MAX_RECEIVE_COUNT}; got {count}")
+    if not (MIN_RECEIVE_COUNT <= count <= MAX_RECEIVE_COUNT):
+        raise AdsefidValidationError(
+            f"'count' must be between {MIN_RECEIVE_COUNT} and {MAX_RECEIVE_COUNT}; got {count}"
+        )
 
 
 def optional(data: dict[str, Any], key: str) -> Any | None:

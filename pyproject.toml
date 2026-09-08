@@ -4,11 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "adsefid"
-version = "0.2.0"
+version = "0.3.0"
 description = "Python client SDK for the adsefid.com SMS Web Service API"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "Proprietary" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "adsefid.com" }]
 keywords = ["sms", "messenger", "adsefid", "webservice"]
 classifiers = [
@@ -24,8 +25,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.6", "mypy>=1.11", "build>=1.2"]
-examples = ["flask"]
+dev = ["ruff>=0.6", "mypy>=1.11", "build>=1.2", "pytest>=8", "pytest-asyncio>=0.24"]
+examples = ["flask", "fastapi", "uvicorn"]
 
 [project.urls]
 Homepage = "https://github.com/adsefid/sdk-python"
@@ -36,7 +37,12 @@ Issues = "https://github.com/adsefid/sdk-python/issues"
 packages = ["src/adsefid"]
 
 [tool.hatch.build.targets.sdist]
-exclude = ["examples", ".venv", ".mypy_cache", ".ruff_cache"]
+exclude = ["examples", "tests", ".venv", ".mypy_cache", ".ruff_cache", ".pytest_cache"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
 
 [tool.ruff]
 line-length = 100

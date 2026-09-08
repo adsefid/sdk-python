@@ -25,5 +25,11 @@ class ClientConfig:
     user_agent: str = DEFAULT_USER_AGENT
 
     def __post_init__(self) -> None:
+        # Fail here rather than letting a blank key surface later as a confusing
+        # 401 from the service. The sibling SDKs reject it at construction too.
+        if not self.api_key.strip():
+            raise AdsefidValidationError("api_key is required and must be non-blank")
+        if not self.base_url.strip():
+            raise AdsefidValidationError("base_url is required and must be non-blank")
         if not self.user_agent.strip() or "\r" in self.user_agent or "\n" in self.user_agent:
             raise AdsefidValidationError("user_agent must be non-blank and contain no line breaks")

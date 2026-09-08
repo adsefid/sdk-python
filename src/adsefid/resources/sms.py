@@ -25,8 +25,8 @@ from ..models.sms import (
     SendP2pSmsResult,
     SendSingleSmsRequest,
     SendSingleSmsResult,
-    SendSmsTemplateRequest,
-    SendSmsTemplateResult,
+    SendTemplateSmsRequest,
+    SendTemplateSmsResult,
 )
 
 if TYPE_CHECKING:
@@ -66,7 +66,7 @@ def _validate_send_p2p(request: SendP2pSmsRequest) -> None:
         validate_local_id(message.local_id, field_name="messages[].local_id")
 
 
-def _validate_send_template(request: SendSmsTemplateRequest) -> None:
+def _validate_send_template(request: SendTemplateSmsRequest) -> None:
     validate_non_empty(request.template_id, field_name="template_id")
     validate_non_empty(request.receptor, field_name="receptor")
     validate_non_empty(request.line_number, field_name="line_number")
@@ -133,7 +133,7 @@ class SmsResource:
         data = self._client.request("POST", "/v1/sms/p2p", json_body=request.to_dict())
         return SendP2pSmsResult.from_dict(data)  # type: ignore[arg-type]
 
-    def send_template(self, request: SendSmsTemplateRequest) -> SendSmsTemplateResult:
+    def send_template(self, request: SendTemplateSmsRequest) -> SendTemplateSmsResult:
         """Send a pre-approved template message (`POST /v1/sms/template`).
 
         Raises AdsefidValidationError if `template_id`/`receptor`/`line_number` is
@@ -141,7 +141,7 @@ class SmsResource:
         """
         _validate_send_template(request)
         data = self._client.request("POST", "/v1/sms/template", json_body=request.to_dict())
-        return SendSmsTemplateResult.from_dict(data)  # type: ignore[arg-type]
+        return SendTemplateSmsResult.from_dict(data)  # type: ignore[arg-type]
 
     def get_status(
         self,
@@ -211,10 +211,10 @@ class AsyncSmsResource:
         data = await self._client.request("POST", "/v1/sms/p2p", json_body=request.to_dict())
         return SendP2pSmsResult.from_dict(data)  # type: ignore[arg-type]
 
-    async def send_template(self, request: SendSmsTemplateRequest) -> SendSmsTemplateResult:
+    async def send_template(self, request: SendTemplateSmsRequest) -> SendTemplateSmsResult:
         _validate_send_template(request)
         data = await self._client.request("POST", "/v1/sms/template", json_body=request.to_dict())
-        return SendSmsTemplateResult.from_dict(data)  # type: ignore[arg-type]
+        return SendTemplateSmsResult.from_dict(data)  # type: ignore[arg-type]
 
     async def get_status(
         self,
