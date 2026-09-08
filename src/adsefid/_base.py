@@ -13,8 +13,8 @@ API_KEY_HEADER = "X-API-KEY"
 _RATE_LIMIT_RAW_CODES = {2035, 2036}
 
 
-def build_headers(api_key: str) -> dict[str, str]:
-    return {API_KEY_HEADER: api_key}
+def build_headers(api_key: str, user_agent: str) -> dict[str, str]:
+    return {API_KEY_HEADER: api_key, "User-Agent": user_agent}
 
 
 def build_query_params(
@@ -30,6 +30,7 @@ def build_request_kwargs(
     method: str,
     path: str,
     api_key: str,
+    user_agent: str,
     json_body: dict[str, Any] | None = None,
     query_params: Mapping[str, str | int | None] | None = None,
     files: dict[str, Any] | None = None,
@@ -37,7 +38,7 @@ def build_request_kwargs(
     kwargs: dict[str, Any] = {
         "method": method,
         "url": path,
-        "headers": build_headers(api_key),
+        "headers": build_headers(api_key, user_agent),
     }
     params = build_query_params(query_params)
     if params:

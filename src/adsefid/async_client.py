@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 
 from ._base import build_request_kwargs, parse_success_data, wrap_transport_error
-from .config import DEFAULT_BASE_URL, DEFAULT_TIMEOUT_SECONDS, ClientConfig
+from .config import DEFAULT_BASE_URL, DEFAULT_TIMEOUT_SECONDS, DEFAULT_USER_AGENT, ClientConfig
 from .resources.messenger import AsyncMessengerResource
 from .resources.sms import AsyncSmsResource
 from .resources.user import AsyncUserResource
@@ -25,6 +25,7 @@ class AdsefidAsyncClient:
         *,
         base_url: str = DEFAULT_BASE_URL,
         timeout: float = DEFAULT_TIMEOUT_SECONDS,
+        user_agent: str = DEFAULT_USER_AGENT,
         http_client: httpx.AsyncClient | None = None,
     ) -> None:
         """Create a client.
@@ -34,12 +35,19 @@ class AdsefidAsyncClient:
             base_url: API origin; override only to target a non-production environment.
             timeout: Per-request timeout in seconds, passed to `httpx.AsyncClient`.
                 Ignored if `http_client` is given.
+            user_agent: Value sent in the `User-Agent` header. Defaults to
+                `adsefid-python/<SDK_VERSION>`.
             http_client: A pre-configured `httpx.AsyncClient` to use instead of
                 constructing one from `base_url`/`timeout`. When supplied, this SDK
                 does not close it on `aclose()`/`__aexit__` — the caller owns its
                 lifecycle.
         """
-        self._config = ClientConfig(api_key=api_key, base_url=base_url, timeout=timeout)
+        self._config = ClientConfig(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            user_agent=user_agent,
+        )
         self._http_client = http_client or httpx.AsyncClient(base_url=base_url, timeout=timeout)
         self._owns_http_client = http_client is None
 
@@ -68,6 +76,7 @@ class AdsefidAsyncClient:
             method=method,
             path=path,
             api_key=self._config.api_key,
+            user_agent=self._config.user_agent,
             json_body=json_body,
             query_params=query_params,
             files=files,

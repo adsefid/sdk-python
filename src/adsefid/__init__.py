@@ -1,10 +1,8 @@
 """Python client SDK for the adsefid.com SMS Web Service API (doc v1.11.0)."""
 
-from importlib.metadata import PackageNotFoundError, version
-
 from .async_client import AdsefidAsyncClient
 from .client import AdsefidClient
-from .config import ClientConfig
+from .config import SDK_VERSION, ClientConfig
 from .enums import (
     LineSelector,
     TemplateParameterType,
@@ -32,10 +30,7 @@ from .webhooks import (
     verify_and_parse_webhook,
 )
 
-try:
-    __version__ = version("adsefid")
-except PackageNotFoundError:
-    __version__ = "0+unknown"
+__version__ = SDK_VERSION
 
 __all__ = [
     "__version__",

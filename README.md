@@ -88,11 +88,14 @@ client = AdsefidClient(
     api_key="...",
     base_url="https://api.adsefid.com",  # override for a different environment
     timeout=30.0,  # seconds, passed to httpx
+    user_agent="my-service/1.0.0",  # defaults to adsefid-python/<SDK_VERSION>
     http_client=httpx.Client(...),  # optional: inject your own configured httpx.Client
 )
 ```
 
 If you pass your own `http_client`/`AdsefidAsyncClient(http_client=...)`, the SDK will not close it for you when `.close()`/`.aclose()` is called — you own its lifecycle.
+
+Monetary response fields (`cost`, `total_cost`, and `credit_left`) use `float` and may contain fractional values.
 
 ## Resource reference
 
@@ -223,7 +226,7 @@ Return a `2xx` quickly and process asynchronously where possible — the platfor
 
 This SDK follows Semantic Versioning independently of the API documentation.
 
-- SDK version: **`0.1.0`** (`version` in `pyproject.toml`; `adsefid.__version__` reads package metadata)
+- SDK version: **`0.2.0`** (`version` in `pyproject.toml`; `adsefid.__version__` reads package metadata)
 - Verified API documentation: **`v1.11.0`**
 
 SDK releases use `v<SDK_VERSION>` tags. The two version numbers move independently.

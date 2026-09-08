@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 
 from ._base import build_request_kwargs, parse_success_data, wrap_transport_error
-from .config import DEFAULT_BASE_URL, DEFAULT_TIMEOUT_SECONDS, ClientConfig
+from .config import DEFAULT_BASE_URL, DEFAULT_TIMEOUT_SECONDS, DEFAULT_USER_AGENT, ClientConfig
 from .resources.messenger import MessengerResource
 from .resources.sms import SmsResource
 from .resources.user import UserResource
@@ -25,6 +25,7 @@ class AdsefidClient:
         *,
         base_url: str = DEFAULT_BASE_URL,
         timeout: float = DEFAULT_TIMEOUT_SECONDS,
+        user_agent: str = DEFAULT_USER_AGENT,
         http_client: httpx.Client | None = None,
     ) -> None:
         """Create a client.
@@ -34,11 +35,18 @@ class AdsefidClient:
             base_url: API origin; override only to target a non-production environment.
             timeout: Per-request timeout in seconds, passed to `httpx.Client`. Ignored
                 if `http_client` is given.
+            user_agent: Value sent in the `User-Agent` header. Defaults to
+                `adsefid-python/<SDK_VERSION>`.
             http_client: A pre-configured `httpx.Client` to use instead of constructing
                 one from `base_url`/`timeout`. When supplied, this SDK does not close
                 it on `close()`/`__exit__` — the caller owns its lifecycle.
         """
-        self._config = ClientConfig(api_key=api_key, base_url=base_url, timeout=timeout)
+        self._config = ClientConfig(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            user_agent=user_agent,
+        )
         self._http_client = http_client or httpx.Client(base_url=base_url, timeout=timeout)
         self._owns_http_client = http_client is None
 
@@ -67,6 +75,7 @@ class AdsefidClient:
             method=method,
             path=path,
             api_key=self._config.api_key,
+            user_agent=self._config.user_agent,
             json_body=json_body,
             query_params=query_params,
             files=files,

@@ -16,7 +16,7 @@ from ..enums import LineSelector, TemplateParameterType, TemplateState
 class AccountInfo:
     name: str
     company_name: str
-    credit_left: int
+    credit_left: float
     email: str
     phone: str
     account_status: str
@@ -26,7 +26,7 @@ class AccountInfo:
         return cls(
             name=data["name"],
             company_name=data["company_name"],
-            credit_left=data["credit_left"],
+            credit_left=float(data["credit_left"]),
             email=data["email"],
             phone=data["phone"],
             account_status=data["account_status"],
