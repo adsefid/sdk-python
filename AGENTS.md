@@ -11,7 +11,7 @@ behavior change here should generally be considered for parity there.
 
 The API surface (endpoints, field names, types, validation rules, enums, example payloads,
 webhook behavior) is defined by the published adsefid.com SMS Web Service API documentation.
-This SDK is verified against doc version v1.11.0. Re-read the relevant documentation before
+This SDK is verified against doc version v1.12.0. Re-read the relevant documentation before
 changing any endpoint, request/response model, or enum. The SDK follows independent Semantic
 Versioning from `pyproject.toml`; never copy the API-document version into package metadata.
 Record both versions in the README.

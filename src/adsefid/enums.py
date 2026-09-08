@@ -1,4 +1,4 @@
-"""Enumerations defined by the adsefid.com Web Service API (doc v1.11.0, section 3)."""
+"""Enumerations defined by the adsefid.com Web Service API (doc v1.12.0, section 3)."""
 
 from enum import Enum, IntEnum
 

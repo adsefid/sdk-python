@@ -1,4 +1,4 @@
-"""Python client SDK for the adsefid.com SMS Web Service API (doc v1.11.0)."""
+"""Python client SDK for the adsefid.com SMS Web Service API (doc v1.12.0)."""
 
 from .async_client import AdsefidAsyncClient
 from .client import AdsefidClient
