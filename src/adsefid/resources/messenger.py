@@ -19,12 +19,12 @@ from ..models.messenger import (
     CancelMessengerRequest,
     SendBulkMessengerRequest,
     SendBulkMessengerResult,
-    SendMessengerTemplateRequest,
-    SendMessengerTemplateResult,
     SendP2pMessengerRequest,
     SendP2pMessengerResult,
     SendSingleMessengerRequest,
     SendSingleMessengerResult,
+    SendTemplateMessengerRequest,
+    SendTemplateMessengerResult,
     UploadMessengerFileResult,
 )
 
@@ -73,7 +73,7 @@ def _validate_send_p2p(request: SendP2pMessengerRequest) -> None:
         validate_local_id(receptor.local_id, field_name="receptors[].local_id")
 
 
-def _validate_send_template(request: SendMessengerTemplateRequest) -> None:
+def _validate_send_template(request: SendTemplateMessengerRequest) -> None:
     validate_non_empty(request.template_id, field_name="template_id")
     validate_non_empty(request.receptor, field_name="receptor")
     validate_non_empty(request.profile, field_name="profile")
@@ -170,7 +170,7 @@ class MessengerResource:
         data = self._client.request("POST", "/v1/messenger/cancel", json_body=request.to_dict())
         return CancelResult.from_dict(data)  # type: ignore[arg-type]
 
-    def send_template(self, request: SendMessengerTemplateRequest) -> SendMessengerTemplateResult:
+    def send_template(self, request: SendTemplateMessengerRequest) -> SendTemplateMessengerResult:
         """Send a pre-approved template message (`POST /v1/messenger/template`).
 
         Raises AdsefidValidationError if `template_id`/`receptor`/`profile` is empty
@@ -178,7 +178,7 @@ class MessengerResource:
         """
         _validate_send_template(request)
         data = self._client.request("POST", "/v1/messenger/template", json_body=request.to_dict())
-        return SendMessengerTemplateResult.from_dict(data)  # type: ignore[arg-type]
+        return SendTemplateMessengerResult.from_dict(data)  # type: ignore[arg-type]
 
     def get_status(
         self,
@@ -246,13 +246,13 @@ class AsyncMessengerResource:
         return CancelResult.from_dict(data)  # type: ignore[arg-type]
 
     async def send_template(
-        self, request: SendMessengerTemplateRequest
-    ) -> SendMessengerTemplateResult:
+        self, request: SendTemplateMessengerRequest
+    ) -> SendTemplateMessengerResult:
         _validate_send_template(request)
         data = await self._client.request(
             "POST", "/v1/messenger/template", json_body=request.to_dict()
         )
-        return SendMessengerTemplateResult.from_dict(data)  # type: ignore[arg-type]
+        return SendTemplateMessengerResult.from_dict(data)  # type: ignore[arg-type]
 
     async def get_status(
         self,

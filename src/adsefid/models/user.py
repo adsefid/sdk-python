@@ -94,7 +94,7 @@ class GetTemplatesRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class TemplateItem:
+class UserTemplate:
     template_id: str
     content: str
     parameters: dict[str, TemplateParameterType]
@@ -104,7 +104,7 @@ class TemplateItem:
     updated_at: datetime | None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> TemplateItem:
+    def from_dict(cls, data: dict[str, Any]) -> UserTemplate:
         raw_parameters: dict[str, str] = data.get("parameters", {})
         parameters: dict[str, TemplateParameterType] = {}
         for key, value in raw_parameters.items():
@@ -126,13 +126,13 @@ class TemplateItem:
 
 
 @dataclass(frozen=True, slots=True)
-class GetTemplatesResult:
-    items: list[TemplateItem]
+class GetUserTemplatesResult:
+    items: list[UserTemplate]
     total: int
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> GetTemplatesResult:
+    def from_dict(cls, data: dict[str, Any]) -> GetUserTemplatesResult:
         return cls(
-            items=[TemplateItem.from_dict(item) for item in data.get("items", [])],
+            items=[UserTemplate.from_dict(item) for item in data.get("items", [])],
             total=data["total"],
         )

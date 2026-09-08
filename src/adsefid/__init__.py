@@ -18,6 +18,7 @@ from .exceptions import (
     AdsefidValidationError,
     AdsefidWebhookVerificationError,
 )
+from .models.common import TemplateParameterValue
 from .webhooks import (
     MessengerStatusWebhookEvent,
     ReceiveWebhookEvent,
@@ -39,6 +40,7 @@ __all__ = [
     "ClientConfig",
     "LineSelector",
     "TemplateParameterType",
+    "TemplateParameterValue",
     "TemplateState",
     "WebServiceMessageStatus",
     "WebServiceResponseCode",

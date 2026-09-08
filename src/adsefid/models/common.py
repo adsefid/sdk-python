@@ -2,10 +2,38 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from .._serialization import format_datetime, parse_datetime
 from ..enums import WebServiceMessageStatus, parse_message_status
+
+TemplateParameterValue = str | int | float | Decimal
+"""A value bound to one named template parameter.
+
+The API accepts a JSON string or a JSON number for any parameter. For a
+parameter the template declares as ``number``, the service substitutes a
+numeric *string* verbatim, so pass a string whenever the exact digits matter:
+``"001234"`` keeps its leading zeros and ``"1.50"`` keeps its trailing zero,
+where the numbers ``1234`` and ``1.5`` would not.
+
+A `Decimal` is serialized as a numeric string for the same reason — that is the
+only representation that survives the round trip exactly. Plain `int` and
+`float` travel as JSON numbers.
+"""
+
+
+def serialize_template_parameters(
+    parameters: dict[str, TemplateParameterValue],
+) -> dict[str, str | int | float]:
+    """Render a template parameter map into JSON-encodable values.
+
+    `Decimal` becomes its exact decimal string rather than a lossy float.
+    """
+    return {
+        name: str(value) if isinstance(value, Decimal) else value
+        for name, value in parameters.items()
+    }
 
 
 @dataclass(frozen=True, slots=True)

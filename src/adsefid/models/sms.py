@@ -6,9 +6,7 @@ from typing import Any
 
 from .._serialization import format_datetime, parse_datetime
 from ..enums import LineSelector, WebServiceMessageStatus, parse_message_status
-
-TemplateParameterValue = str | int | float
-
+from .common import TemplateParameterValue, serialize_template_parameters
 
 # --------------------------------------------------------------------------
 # 4.1 POST /v1/sms/single
@@ -267,7 +265,7 @@ class SendP2pSmsResult:
 
 
 @dataclass(frozen=True, slots=True)
-class SendSmsTemplateRequest:
+class SendTemplateSmsRequest:
     template_id: str
     parameters: dict[str, TemplateParameterValue]
     receptor: str
@@ -279,7 +277,7 @@ class SendSmsTemplateRequest:
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {
             "template_id": self.template_id,
-            "parameters": dict(self.parameters),
+            "parameters": serialize_template_parameters(self.parameters),
             "receptor": self.receptor,
             "line_number": self.line_number,
         }
@@ -293,7 +291,7 @@ class SendSmsTemplateRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class SendSmsTemplateResult:
+class SendTemplateSmsResult:
     group_id: str
     message_id: str
     status: WebServiceMessageStatus | None
@@ -311,7 +309,7 @@ class SendSmsTemplateResult:
     parameters: dict[str, TemplateParameterValue]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendSmsTemplateResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendTemplateSmsResult:
         status, raw_status = parse_message_status(data["status"])
         return cls(
             group_id=data["group_id"],

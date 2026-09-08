@@ -7,7 +7,7 @@ from ..enums import TemplateState
 from ..models.user import (
     AccountInfo,
     GetTemplatesRequest,
-    GetTemplatesResult,
+    GetUserTemplatesResult,
     UserLine,
     UserProfile,
 )
@@ -56,7 +56,7 @@ class UserResource:
         state: TemplateState | None = None,
         skip: int | None = None,
         take: int | None = None,
-    ) -> GetTemplatesResult:
+    ) -> GetUserTemplatesResult:
         """List message templates, optionally filtered and paginated
         (`GET /v1/user/templates`).
 
@@ -67,7 +67,7 @@ class UserResource:
         data = self._client.request(
             "GET", "/v1/user/templates", query_params=request.to_query_params()
         )
-        return GetTemplatesResult.from_dict(data)  # type: ignore[arg-type]
+        return GetUserTemplatesResult.from_dict(data)  # type: ignore[arg-type]
 
 
 class AsyncUserResource:
@@ -99,9 +99,9 @@ class AsyncUserResource:
         state: TemplateState | None = None,
         skip: int | None = None,
         take: int | None = None,
-    ) -> GetTemplatesResult:
+    ) -> GetUserTemplatesResult:
         request = _templates_request(state, skip, take)
         data = await self._client.request(
             "GET", "/v1/user/templates", query_params=request.to_query_params()
         )
-        return GetTemplatesResult.from_dict(data)  # type: ignore[arg-type]
+        return GetUserTemplatesResult.from_dict(data)  # type: ignore[arg-type]

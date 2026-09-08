@@ -60,7 +60,14 @@ def parse_success_data(http_status_code: int, raw_body: bytes) -> dict[str, Any]
 
     is_success = 200 <= http_status_code < 300
     if isinstance(parsed, dict) and parsed.get("status") == "success" and is_success:
-        data: dict[str, Any] | list[Any] = parsed.get("data", {})
+        data = parsed.get("data")
+        if not isinstance(data, dict | list):
+            # A success envelope with no usable payload is a malformed response,
+            # not a successful call. Returning {} here would push the failure
+            # into a model's from_dict as a bare KeyError.
+            raise AdsefidTransportError(
+                "The API returned a success envelope with a missing or unusable 'data' payload"
+            )
         return data
 
     _raise_api_error(http_status_code, parsed)

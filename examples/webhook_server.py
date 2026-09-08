@@ -31,8 +31,10 @@ def handle_webhook():
             timestamp_header=request.headers[WebhookHeaders.TIMESTAMP],
             secret=WEBHOOK_SECRET,
         )
-    except AdsefidWebhookVerificationError as exc:
-        return {"error": str(exc)}, 400
+    except AdsefidWebhookVerificationError:
+        # Say nothing about why: an attacker probing signatures learns nothing
+        # from a bare 401. See webhook_server_fastapi.py for the ASGI version.
+        return "", 401
 
     # Only event types this webhook endpoint is subscribed to (in your adsefid.com panel) ever
     # arrive here — an endpoint subscribed to just "receive" never sees a StatusWebhookEvent.
