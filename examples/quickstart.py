@@ -14,8 +14,8 @@ from adsefid import (
     AdsefidClient,
     AdsefidRateLimitError,
     AdsefidValidationError,
+    SendSingleSmsRequest,
 )
-from adsefid.models.sms import SendSingleSmsRequest
 
 
 def main() -> None:

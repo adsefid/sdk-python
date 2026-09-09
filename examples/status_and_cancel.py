@@ -14,8 +14,7 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 
-from adsefid import AdsefidClient
-from adsefid.models.sms import CancelSmsRequest, SendSingleSmsRequest
+from adsefid import AdsefidClient, CancelSmsRequest, SendSingleSmsRequest
 
 
 def main() -> int:

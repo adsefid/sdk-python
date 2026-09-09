@@ -38,9 +38,10 @@ class AdsefidAsyncClient:
             user_agent: Value sent in the `User-Agent` header. Defaults to
                 `adsefid-python/<SDK_VERSION>`.
             http_client: A pre-configured `httpx.AsyncClient` to use instead of
-                constructing one from `base_url`/`timeout`. When supplied, this SDK
-                does not close it on `aclose()`/`__aexit__` — the caller owns its
-                lifecycle.
+                constructing one from `timeout`. Requests always carry the absolute URL
+                built from `base_url`, so the supplied client needs no `base_url` of its
+                own. When supplied, this SDK does not close it on `aclose()`/`__aexit__`
+                — the caller owns its lifecycle.
         """
         self._config = ClientConfig(
             api_key=api_key,
@@ -74,6 +75,7 @@ class AdsefidAsyncClient:
         """
         kwargs = build_request_kwargs(
             method=method,
+            base_url=self._config.base_url,
             path=path,
             api_key=self._config.api_key,
             user_agent=self._config.user_agent,

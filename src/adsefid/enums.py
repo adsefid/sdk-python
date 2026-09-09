@@ -108,6 +108,13 @@ class TemplateParameterType(str, Enum):
     NUMBER = "number"
 
 
+MESSAGE_STATUS_MIN = 1000
+"""Lowest `WebServiceCode` value that is a message status (doc section 3.3)."""
+
+ERROR_CODE_MIN = 2000
+"""Lowest `WebServiceCode` value that is an error code (doc section 3.3)."""
+
+
 def parse_message_status(value: int) -> tuple[WebServiceMessageStatus | None, int]:
     """Permissively parse a WebServiceMessageStatus, tolerating unknown future codes.
 

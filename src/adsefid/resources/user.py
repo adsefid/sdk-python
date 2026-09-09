@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
+from .._base import expect_list, expect_object
 from .._serialization import validate_skip, validate_take
 from ..enums import TemplateState
 from ..models.user import (
@@ -36,19 +37,19 @@ class UserResource:
         (`GET /v1/user/info`).
         """
         data = self._client.request("GET", "/v1/user/info")
-        return AccountInfo.from_dict(data)  # type: ignore[arg-type]
+        return AccountInfo.from_dict(expect_object(data))
 
     def get_lines(self) -> list[UserLine]:
         """List the SMS lines assigned to the account (`GET /v1/user/lines`)."""
-        data: Any = self._client.request("GET", "/v1/user/lines")
-        return [UserLine.from_dict(item) for item in data]
+        data = self._client.request("GET", "/v1/user/lines")
+        return [UserLine.from_dict(item) for item in expect_list(data)]
 
     def get_profiles(self) -> list[UserProfile]:
         """List the messenger profiles assigned to the account
         (`GET /v1/user/profiles`).
         """
-        data: Any = self._client.request("GET", "/v1/user/profiles")
-        return [UserProfile.from_dict(item) for item in data]
+        data = self._client.request("GET", "/v1/user/profiles")
+        return [UserProfile.from_dict(item) for item in expect_list(data)]
 
     def get_templates(
         self,
@@ -67,7 +68,7 @@ class UserResource:
         data = self._client.request(
             "GET", "/v1/user/templates", query_params=request.to_query_params()
         )
-        return GetUserTemplatesResult.from_dict(data)  # type: ignore[arg-type]
+        return GetUserTemplatesResult.from_dict(expect_object(data))
 
 
 class AsyncUserResource:
@@ -83,15 +84,15 @@ class AsyncUserResource:
 
     async def get_info(self) -> AccountInfo:
         data = await self._client.request("GET", "/v1/user/info")
-        return AccountInfo.from_dict(data)  # type: ignore[arg-type]
+        return AccountInfo.from_dict(expect_object(data))
 
     async def get_lines(self) -> list[UserLine]:
-        data: Any = await self._client.request("GET", "/v1/user/lines")
-        return [UserLine.from_dict(item) for item in data]
+        data = await self._client.request("GET", "/v1/user/lines")
+        return [UserLine.from_dict(item) for item in expect_list(data)]
 
     async def get_profiles(self) -> list[UserProfile]:
-        data: Any = await self._client.request("GET", "/v1/user/profiles")
-        return [UserProfile.from_dict(item) for item in data]
+        data = await self._client.request("GET", "/v1/user/profiles")
+        return [UserProfile.from_dict(item) for item in expect_list(data)]
 
     async def get_templates(
         self,
@@ -104,4 +105,4 @@ class AsyncUserResource:
         data = await self._client.request(
             "GET", "/v1/user/templates", query_params=request.to_query_params()
         )
-        return GetUserTemplatesResult.from_dict(data)  # type: ignore[arg-type]
+        return GetUserTemplatesResult.from_dict(expect_object(data))

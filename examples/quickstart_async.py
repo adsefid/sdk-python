@@ -15,8 +15,8 @@ from adsefid import (
     AdsefidAsyncClient,
     AdsefidRateLimitError,
     AdsefidValidationError,
+    SendSingleSmsRequest,
 )
-from adsefid.models.sms import SendSingleSmsRequest
 
 
 async def main() -> None:

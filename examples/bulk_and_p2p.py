@@ -2,8 +2,8 @@
 
 Both endpoints answer HTTP 200 even when some receptors failed, so a call that
 did not raise still needs its per-item results inspected. `raw_status` is the
-number the service sent: below 2000 it is a delivery status, 2000 and above it
-is an error code explaining why that one receptor was rejected.
+WebServiceCode the service sent; `status` names it when the item was accepted
+and `error_code` names it when that one receptor was rejected.
 
 Usage:
     ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=3000xxxx python examples/bulk_and_p2p.py
@@ -17,31 +17,23 @@ import sys
 from adsefid import (
     AdsefidApiError,
     AdsefidClient,
-    WebServiceMessageStatus,
-    WebServiceResponseCode,
-)
-from adsefid.models.sms import (
     BulkReceptor,
+    BulkReceptorResult,
     P2pMessage,
+    P2pMessageResult,
     SendBulkSmsRequest,
     SendP2pSmsRequest,
 )
 
 
-def describe(receptor: str, local_id: str | None, raw_status: int, message_id: str | None) -> str:
-    label = local_id or "-"
-    if raw_status >= 2000:
-        try:
-            reason = WebServiceResponseCode(raw_status).name
-        except ValueError:
-            reason = "UNKNOWN"
-        return f"  {receptor:<14} ({label}) FAILED {raw_status} {reason}"
+def describe(item: BulkReceptorResult | P2pMessageResult) -> str:
+    label = item.local_id or "-"
+    if item.error_code is not None or item.raw_status >= 2000:
+        reason = item.error_code.name if item.error_code is not None else "UNKNOWN"
+        return f"  {item.receptor:<14} ({label}) FAILED {item.raw_status} {reason}"
 
-    try:
-        state = WebServiceMessageStatus(raw_status).name
-    except ValueError:
-        state = str(raw_status)
-    return f"  {receptor:<14} ({label}) accepted as {message_id}: {state}"
+    state = item.status.name if item.status is not None else str(item.raw_status)
+    return f"  {item.receptor:<14} ({label}) accepted as {item.message_id}: {state}"
 
 
 def main() -> int:
@@ -72,7 +64,7 @@ def main() -> int:
 
         print(f"\nbulk group {bulk.group_id}: {bulk.total_count} receptors, cost {bulk.total_cost}")
         for item in bulk.receptors:
-            print(describe(item.receptor, item.local_id, item.raw_status, item.message_id))
+            print(describe(item))
         print(f"  status histogram: {bulk.counts}")
 
         # A different message per receptor, in one request.
@@ -96,9 +88,7 @@ def main() -> int:
 
         print(f"\np2p group {p2p.group_id}: cost {p2p.total_cost}")
         for message in p2p.messages:
-            print(
-                describe(message.receptor, message.local_id, message.raw_status, message.message_id)
-            )
+            print(describe(message))
 
     return 0
 

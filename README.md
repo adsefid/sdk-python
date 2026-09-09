@@ -23,8 +23,7 @@ pip install adsefid
 ```python
 import os
 
-from adsefid import AdsefidClient
-from adsefid.models.sms import SendSingleSmsRequest
+from adsefid import AdsefidClient, SendSingleSmsRequest
 
 client = AdsefidClient(api_key=os.environ["ADSEFID_API_KEY"])
 
@@ -46,8 +45,7 @@ client.close()
 import asyncio
 import os
 
-from adsefid import AdsefidAsyncClient
-from adsefid.models.sms import SendSingleSmsRequest
+from adsefid import AdsefidAsyncClient, SendSingleSmsRequest
 
 
 async def main() -> None:
@@ -93,7 +91,9 @@ client = AdsefidClient(
 )
 ```
 
-If you pass your own `http_client`/`AdsefidAsyncClient(http_client=...)`, the SDK will not close it for you when `.close()`/`.aclose()` is called — you own its lifecycle.
+If you pass your own `http_client`/`AdsefidAsyncClient(http_client=...)`, the SDK will not close it for you when `.close()`/`.aclose()` is called — you own its lifecycle. Every request carries the absolute URL built from `base_url`, so the client you supply needs no `base_url` of its own; its `timeout` is used as-is.
+
+Every request and result model is importable from the top-level `adsefid` package (`from adsefid import SendBulkSmsRequest, BulkReceptor`); the `adsefid.models.*` submodules keep working.
 
 Monetary response fields (`cost`, `total_cost`, and `credit_left`) use `float` and may contain fractional values.
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Any
 
 from .exceptions import AdsefidValidationError
 
@@ -119,13 +118,3 @@ def validate_receive_count(count: int | None) -> None:
         raise AdsefidValidationError(
             f"'count' must be between {MIN_RECEIVE_COUNT} and {MAX_RECEIVE_COUNT}; got {count}"
         )
-
-
-def optional(data: dict[str, Any], key: str) -> Any | None:
-    return data.get(key)
-
-
-def require(data: dict[str, Any], key: str) -> Any:
-    if key not in data:
-        raise AdsefidValidationError(f"Response payload is missing required field {key!r}")
-    return data[key]

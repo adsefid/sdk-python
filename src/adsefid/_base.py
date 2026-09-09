@@ -25,9 +25,19 @@ def build_query_params(
     return {key: value for key, value in params.items() if value is not None}
 
 
+def build_url(base_url: str, path: str) -> str:
+    """Join the configured base URL and an endpoint path into one absolute URL.
+
+    The SDK always sends absolute URLs, so a caller-supplied `httpx.Client` needs
+    no `base_url` of its own.
+    """
+    return base_url.rstrip("/") + "/" + path.lstrip("/")
+
+
 def build_request_kwargs(
     *,
     method: str,
+    base_url: str,
     path: str,
     api_key: str,
     user_agent: str,
@@ -37,7 +47,7 @@ def build_request_kwargs(
 ) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "method": method,
-        "url": path,
+        "url": build_url(base_url, path),
         "headers": build_headers(api_key, user_agent),
     }
     params = build_query_params(query_params)
@@ -114,3 +124,26 @@ def _raise_api_error(http_status_code: int, parsed: Any) -> NoReturn:
 
 def wrap_transport_error(exc: httpx.TransportError) -> AdsefidTransportError:
     return AdsefidTransportError(f"Transport error while calling adsefid API: {exc}")
+
+
+def expect_object(data: dict[str, Any] | list[Any]) -> dict[str, Any]:
+    """Narrow a success payload to the JSON object an endpoint documents.
+
+    A list where an object was expected is a malformed response, surfaced as
+    `AdsefidTransportError` rather than as a bare `TypeError`/`KeyError` from a
+    model's `from_dict`.
+    """
+    if not isinstance(data, dict):
+        raise AdsefidTransportError(
+            "The API returned a JSON array where an object payload was expected"
+        )
+    return data
+
+
+def expect_list(data: dict[str, Any] | list[Any]) -> list[Any]:
+    """Narrow a success payload to the JSON array an endpoint documents."""
+    if not isinstance(data, list):
+        raise AdsefidTransportError(
+            "The API returned a JSON object where an array payload was expected"
+        )
+    return data
