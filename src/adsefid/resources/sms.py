@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from .._base import expect_object
 from .._serialization import (
     SMS_MESSAGE_MAX_LENGTH,
     format_datetime,
@@ -108,7 +109,7 @@ class SmsResource:
         """
         _validate_send_single(request)
         data = self._client.request("POST", "/v1/sms/single", json_body=request.to_dict())
-        return SendSingleSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return SendSingleSmsResult.from_dict(expect_object(data))
 
     def send_bulk(self, request: SendBulkSmsRequest) -> SendBulkSmsResult:
         """Send the same SMS body to many receptors (`POST /v1/sms/bulk`).
@@ -120,7 +121,7 @@ class SmsResource:
         """
         _validate_send_bulk(request)
         data = self._client.request("POST", "/v1/sms/bulk", json_body=request.to_dict())
-        return SendBulkSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return SendBulkSmsResult.from_dict(expect_object(data))
 
     def send_p2p(self, request: SendP2pSmsRequest) -> SendP2pSmsResult:
         """Send a distinct message per receptor in one call (`POST /v1/sms/p2p`).
@@ -131,7 +132,7 @@ class SmsResource:
         """
         _validate_send_p2p(request)
         data = self._client.request("POST", "/v1/sms/p2p", json_body=request.to_dict())
-        return SendP2pSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return SendP2pSmsResult.from_dict(expect_object(data))
 
     def send_template(self, request: SendTemplateSmsRequest) -> SendTemplateSmsResult:
         """Send a pre-approved template message (`POST /v1/sms/template`).
@@ -141,7 +142,7 @@ class SmsResource:
         """
         _validate_send_template(request)
         data = self._client.request("POST", "/v1/sms/template", json_body=request.to_dict())
-        return SendTemplateSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return SendTemplateSmsResult.from_dict(expect_object(data))
 
     def get_status(
         self,
@@ -158,7 +159,7 @@ class SmsResource:
         validate_ids_count(message_ids, local_ids)
         params = {"message_ids": join_csv(message_ids), "local_ids": join_csv(local_ids)}
         data = self._client.request("GET", "/v1/sms/status", query_params=params)
-        return StatusResult.from_dict(data)  # type: ignore[arg-type]
+        return StatusResult.from_dict(expect_object(data))
 
     def cancel(self, request: CancelSmsRequest) -> CancelResult:
         """Cancel scheduled/pending messages (`POST /v1/sms/cancel`).
@@ -167,7 +168,7 @@ class SmsResource:
         """
         _validate_cancel(request)
         data = self._client.request("POST", "/v1/sms/cancel", json_body=request.to_dict())
-        return CancelResult.from_dict(data)  # type: ignore[arg-type]
+        return CancelResult.from_dict(expect_object(data))
 
     def get_received(
         self,
@@ -183,7 +184,7 @@ class SmsResource:
         """
         params = _receive_query_params(line_number, count, since)
         data = self._client.request("GET", "/v1/sms/receive", query_params=params)
-        return GetReceivedSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return GetReceivedSmsResult.from_dict(expect_object(data))
 
 
 class AsyncSmsResource:
@@ -199,22 +200,22 @@ class AsyncSmsResource:
     async def send_single(self, request: SendSingleSmsRequest) -> SendSingleSmsResult:
         _validate_send_single(request)
         data = await self._client.request("POST", "/v1/sms/single", json_body=request.to_dict())
-        return SendSingleSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return SendSingleSmsResult.from_dict(expect_object(data))
 
     async def send_bulk(self, request: SendBulkSmsRequest) -> SendBulkSmsResult:
         _validate_send_bulk(request)
         data = await self._client.request("POST", "/v1/sms/bulk", json_body=request.to_dict())
-        return SendBulkSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return SendBulkSmsResult.from_dict(expect_object(data))
 
     async def send_p2p(self, request: SendP2pSmsRequest) -> SendP2pSmsResult:
         _validate_send_p2p(request)
         data = await self._client.request("POST", "/v1/sms/p2p", json_body=request.to_dict())
-        return SendP2pSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return SendP2pSmsResult.from_dict(expect_object(data))
 
     async def send_template(self, request: SendTemplateSmsRequest) -> SendTemplateSmsResult:
         _validate_send_template(request)
         data = await self._client.request("POST", "/v1/sms/template", json_body=request.to_dict())
-        return SendTemplateSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return SendTemplateSmsResult.from_dict(expect_object(data))
 
     async def get_status(
         self,
@@ -225,12 +226,12 @@ class AsyncSmsResource:
         validate_ids_count(message_ids, local_ids)
         params = {"message_ids": join_csv(message_ids), "local_ids": join_csv(local_ids)}
         data = await self._client.request("GET", "/v1/sms/status", query_params=params)
-        return StatusResult.from_dict(data)  # type: ignore[arg-type]
+        return StatusResult.from_dict(expect_object(data))
 
     async def cancel(self, request: CancelSmsRequest) -> CancelResult:
         _validate_cancel(request)
         data = await self._client.request("POST", "/v1/sms/cancel", json_body=request.to_dict())
-        return CancelResult.from_dict(data)  # type: ignore[arg-type]
+        return CancelResult.from_dict(expect_object(data))
 
     async def get_received(
         self,
@@ -241,4 +242,4 @@ class AsyncSmsResource:
     ) -> GetReceivedSmsResult:
         params = _receive_query_params(line_number, count, since)
         data = await self._client.request("GET", "/v1/sms/receive", query_params=params)
-        return GetReceivedSmsResult.from_dict(data)  # type: ignore[arg-type]
+        return GetReceivedSmsResult.from_dict(expect_object(data))

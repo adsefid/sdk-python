@@ -75,13 +75,13 @@ def mock_transport(
 
 def sync_client(**kwargs: Any) -> tuple[AdsefidClient, Recorder]:
     transport, recorder = mock_transport(**kwargs)
-    # base_url has to live on the mock client itself: when http_client is
-    # supplied, AdsefidClient's own base_url/timeout arguments are ignored.
-    http = httpx.Client(transport=transport, base_url=BASE_URL)
-    return AdsefidClient(API_KEY, http_client=http), recorder
+    # The SDK sends absolute URLs built from its own base_url, so the supplied
+    # httpx client carries only the transport.
+    http = httpx.Client(transport=transport)
+    return AdsefidClient(API_KEY, base_url=BASE_URL, http_client=http), recorder
 
 
 def async_client(**kwargs: Any) -> tuple[AdsefidAsyncClient, Recorder]:
     transport, recorder = mock_transport(**kwargs)
-    http = httpx.AsyncClient(transport=transport, base_url=BASE_URL)
-    return AdsefidAsyncClient(API_KEY, http_client=http), recorder
+    http = httpx.AsyncClient(transport=transport)
+    return AdsefidAsyncClient(API_KEY, base_url=BASE_URL, http_client=http), recorder

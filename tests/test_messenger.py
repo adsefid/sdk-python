@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from adsefid import AdsefidValidationError
+from adsefid import AdsefidValidationError, WebServiceResponseCode
 from adsefid.models.messenger import (
     CancelMessengerRequest,
     MessengerBulkReceptor,
@@ -61,6 +61,10 @@ async def test_send_bulk_partial_success_is_not_an_error(make_client) -> None:
     )
 
     assert [item.raw_status for item in result.receptors] == [1000, 2025]
+    assert [item.error_code for item in result.receptors] == [
+        None,
+        WebServiceResponseCode.RECEPTOR_BLACKLISTED,
+    ]
     assert result.receptors[1].message_id is None
     assert result.counts["2025"] == 1
     assert result.total_count == 2

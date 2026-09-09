@@ -230,3 +230,24 @@ def test_the_repr_carries_the_diagnostic_fields() -> None:
     assert "2024" in rendered
     assert "INVALID_PARAMETER" in rendered
     assert "400" in rendered
+
+
+@pytest.mark.parametrize(
+    ("call", "content"),
+    [
+        (lambda client: client.user.get_info(), b'{"status":"success","data":[]}'),
+        (lambda client: client.user.get_lines(), b'{"status":"success","data":{}}'),
+        (
+            lambda client: client.sms.get_status(message_ids=["a"]),
+            b'{"status":"success","data":[]}',
+        ),
+    ],
+    ids=["object expected, array sent", "array expected, object sent", "status list as array"],
+)
+async def test_a_success_payload_of_the_wrong_shape_is_a_transport_error(
+    make_client, call, content
+) -> None:
+    client, _ = make_client(content=content)
+
+    with pytest.raises(AdsefidTransportError):
+        await unwrap(call(client))

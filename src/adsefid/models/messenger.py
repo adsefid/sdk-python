@@ -5,7 +5,13 @@ from datetime import datetime
 from typing import Any
 
 from .._serialization import format_datetime, parse_datetime
-from ..enums import WebServiceMessageStatus, parse_message_status
+from ..enums import (
+    ERROR_CODE_MIN,
+    WebServiceMessageStatus,
+    WebServiceResponseCode,
+    parse_message_status,
+    parse_response_code,
+)
 from .common import TemplateParameterValue, serialize_template_parameters
 
 # --------------------------------------------------------------------------
@@ -123,6 +129,18 @@ class MessengerBulkReceptorResult:
     raw_status: int
     cost: float
 
+    @property
+    def error_code(self) -> WebServiceResponseCode | None:
+        """The named error code when this one item was rejected (``raw_status`` >= 2000).
+
+        ``None`` when the item was accepted (``status`` is then set) or when the
+        service reported a code this SDK does not know yet.
+        """
+        if self.raw_status < ERROR_CODE_MIN:
+            return None
+        code, _ = parse_response_code(self.raw_status)
+        return code
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> MessengerBulkReceptorResult:
         status, raw_status = parse_message_status(data["status"])
@@ -214,6 +232,18 @@ class MessengerP2pReceptorResult:
     status: WebServiceMessageStatus | None
     raw_status: int
     cost: float
+
+    @property
+    def error_code(self) -> WebServiceResponseCode | None:
+        """The named error code when this one item was rejected (``raw_status`` >= 2000).
+
+        ``None`` when the item was accepted (``status`` is then set) or when the
+        service reported a code this SDK does not know yet.
+        """
+        if self.raw_status < ERROR_CODE_MIN:
+            return None
+        code, _ = parse_response_code(self.raw_status)
+        return code
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> MessengerP2pReceptorResult:

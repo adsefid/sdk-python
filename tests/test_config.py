@@ -81,6 +81,19 @@ class TestHttpClientOwnership:
         assert not http.is_closed
 
 
+@pytest.mark.parametrize("base_url", [BASE_URL, BASE_URL + "/"], ids=["bare", "trailing slash"])
+def test_a_supplied_client_without_a_base_url_still_hits_the_configured_origin(
+    base_url: str,
+) -> None:
+    transport, recorder = mock_transport(content=b'{"status":"success","data":[]}')
+    http = httpx.Client(transport=transport)
+    client = AdsefidClient("k", base_url=base_url, http_client=http)
+
+    client.user.get_lines()
+
+    assert str(recorder.only.url) == BASE_URL + "/v1/user/lines"
+
+
 async def test_a_custom_user_agent_reaches_the_wire() -> None:
     transport, recorder = mock_transport(content=b'{"status":"success","data":{}}')
     http = httpx.Client(transport=transport, base_url=BASE_URL)

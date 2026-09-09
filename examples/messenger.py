@@ -13,8 +13,7 @@ from __future__ import annotations
 import os
 import sys
 
-from adsefid import AdsefidClient
-from adsefid.models.messenger import SendSingleMessengerRequest
+from adsefid import AdsefidClient, SendSingleMessengerRequest
 
 
 def main() -> int:

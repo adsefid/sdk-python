@@ -18,10 +18,14 @@ import sys
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
-from adsefid import AdsefidClient, TemplateParameterType, TemplateState
+from adsefid import (
+    AdsefidClient,
+    SendTemplateSmsRequest,
+    TemplateParameterType,
+    TemplateState,
+    UserTemplate,
+)
 from adsefid.models.common import serialize_template_parameters
-from adsefid.models.sms import SendTemplateSmsRequest
-from adsefid.models.user import UserTemplate
 
 
 def show_value_choices() -> None:

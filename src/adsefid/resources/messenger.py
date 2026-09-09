@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, BinaryIO
 
+from .._base import expect_object
 from .._serialization import (
     MESSENGER_MESSAGE_MAX_LENGTH,
     join_csv,
@@ -118,7 +119,7 @@ class MessengerResource:
         """
         _validate_send_single(request)
         data = self._client.request("POST", "/v1/messenger/single", json_body=request.to_dict())
-        return SendSingleMessengerResult.from_dict(data)  # type: ignore[arg-type]
+        return SendSingleMessengerResult.from_dict(expect_object(data))
 
     def send_bulk(self, request: SendBulkMessengerRequest) -> SendBulkMessengerResult:
         """Send the same message body to many receptors (`POST /v1/messenger/bulk`).
@@ -130,7 +131,7 @@ class MessengerResource:
         """
         _validate_send_bulk(request)
         data = self._client.request("POST", "/v1/messenger/bulk", json_body=request.to_dict())
-        return SendBulkMessengerResult.from_dict(data)  # type: ignore[arg-type]
+        return SendBulkMessengerResult.from_dict(expect_object(data))
 
     def send_p2p(self, request: SendP2pMessengerRequest) -> SendP2pMessengerResult:
         """Send a distinct message per receptor in one call (`POST /v1/messenger/p2p`).
@@ -141,7 +142,7 @@ class MessengerResource:
         """
         _validate_send_p2p(request)
         data = self._client.request("POST", "/v1/messenger/p2p", json_body=request.to_dict())
-        return SendP2pMessengerResult.from_dict(data)  # type: ignore[arg-type]
+        return SendP2pMessengerResult.from_dict(expect_object(data))
 
     def upload_file(
         self,
@@ -159,7 +160,7 @@ class MessengerResource:
         """
         files = _build_files_payload(file, filename, content_type)
         data = self._client.request("POST", "/v1/messenger/file", files=files)
-        return UploadMessengerFileResult.from_dict(data)  # type: ignore[arg-type]
+        return UploadMessengerFileResult.from_dict(expect_object(data))
 
     def cancel(self, request: CancelMessengerRequest) -> CancelResult:
         """Cancel scheduled/pending messages (`POST /v1/messenger/cancel`).
@@ -168,7 +169,7 @@ class MessengerResource:
         """
         _validate_cancel(request)
         data = self._client.request("POST", "/v1/messenger/cancel", json_body=request.to_dict())
-        return CancelResult.from_dict(data)  # type: ignore[arg-type]
+        return CancelResult.from_dict(expect_object(data))
 
     def send_template(self, request: SendTemplateMessengerRequest) -> SendTemplateMessengerResult:
         """Send a pre-approved template message (`POST /v1/messenger/template`).
@@ -178,7 +179,7 @@ class MessengerResource:
         """
         _validate_send_template(request)
         data = self._client.request("POST", "/v1/messenger/template", json_body=request.to_dict())
-        return SendTemplateMessengerResult.from_dict(data)  # type: ignore[arg-type]
+        return SendTemplateMessengerResult.from_dict(expect_object(data))
 
     def get_status(
         self,
@@ -196,7 +197,7 @@ class MessengerResource:
         validate_ids_count(message_ids, local_ids)
         params = {"message_ids": join_csv(message_ids), "local_ids": join_csv(local_ids)}
         data = self._client.request("GET", "/v1/messenger/status", query_params=params)
-        return StatusResult.from_dict(data)  # type: ignore[arg-type]
+        return StatusResult.from_dict(expect_object(data))
 
 
 class AsyncMessengerResource:
@@ -215,17 +216,17 @@ class AsyncMessengerResource:
         data = await self._client.request(
             "POST", "/v1/messenger/single", json_body=request.to_dict()
         )
-        return SendSingleMessengerResult.from_dict(data)  # type: ignore[arg-type]
+        return SendSingleMessengerResult.from_dict(expect_object(data))
 
     async def send_bulk(self, request: SendBulkMessengerRequest) -> SendBulkMessengerResult:
         _validate_send_bulk(request)
         data = await self._client.request("POST", "/v1/messenger/bulk", json_body=request.to_dict())
-        return SendBulkMessengerResult.from_dict(data)  # type: ignore[arg-type]
+        return SendBulkMessengerResult.from_dict(expect_object(data))
 
     async def send_p2p(self, request: SendP2pMessengerRequest) -> SendP2pMessengerResult:
         _validate_send_p2p(request)
         data = await self._client.request("POST", "/v1/messenger/p2p", json_body=request.to_dict())
-        return SendP2pMessengerResult.from_dict(data)  # type: ignore[arg-type]
+        return SendP2pMessengerResult.from_dict(expect_object(data))
 
     async def upload_file(
         self,
@@ -236,14 +237,14 @@ class AsyncMessengerResource:
     ) -> UploadMessengerFileResult:
         files = _build_files_payload(file, filename, content_type)
         data = await self._client.request("POST", "/v1/messenger/file", files=files)
-        return UploadMessengerFileResult.from_dict(data)  # type: ignore[arg-type]
+        return UploadMessengerFileResult.from_dict(expect_object(data))
 
     async def cancel(self, request: CancelMessengerRequest) -> CancelResult:
         _validate_cancel(request)
         data = await self._client.request(
             "POST", "/v1/messenger/cancel", json_body=request.to_dict()
         )
-        return CancelResult.from_dict(data)  # type: ignore[arg-type]
+        return CancelResult.from_dict(expect_object(data))
 
     async def send_template(
         self, request: SendTemplateMessengerRequest
@@ -252,7 +253,7 @@ class AsyncMessengerResource:
         data = await self._client.request(
             "POST", "/v1/messenger/template", json_body=request.to_dict()
         )
-        return SendTemplateMessengerResult.from_dict(data)  # type: ignore[arg-type]
+        return SendTemplateMessengerResult.from_dict(expect_object(data))
 
     async def get_status(
         self,
@@ -263,4 +264,4 @@ class AsyncMessengerResource:
         validate_ids_count(message_ids, local_ids)
         params = {"message_ids": join_csv(message_ids), "local_ids": join_csv(local_ids)}
         data = await self._client.request("GET", "/v1/messenger/status", query_params=params)
-        return StatusResult.from_dict(data)  # type: ignore[arg-type]
+        return StatusResult.from_dict(expect_object(data))

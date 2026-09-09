@@ -37,11 +37,11 @@ notes over an ambiguous doc reading:
 
 ```
 src/adsefid/
-├── __init__.py          public API re-exports
+├── __init__.py          public API re-exports (clients, enums, exceptions, every request/result model, webhooks)
 ├── py.typed             PEP 561 marker — do not remove
 ├── client.py            AdsefidClient (sync, wraps httpx.Client)
 ├── async_client.py       AdsefidAsyncClient (async, wraps httpx.AsyncClient)
-├── _base.py              shared request-building / envelope-parsing / error-raising (used by both clients)
+├── _base.py              shared request-building (absolute URL from base_url) / envelope-parsing / error-raising / expect_object+expect_list payload narrowing (used by both clients)
 ├── config.py             ClientConfig
 ├── exceptions.py         full exception hierarchy
 ├── enums.py              LineSelector, WebServiceMessageStatus, WebServiceResponseCode, TemplateState, TemplateParameterType
@@ -67,7 +67,7 @@ src/adsefid/
 2. Add one sync method to the resource class in `resources/<area>.py`, and the structurally identical `async def` method to the `Async<Area>Resource` class in the same file. The two classes must stay parallel: same method names, same parameter order, same validation calls, same shape of return.
 3. Any client-side pre-flight rule (max length, required field, `local_id` shape, count limits) goes in `_serialization.py` as a small named validator function and is called from the resource method *before* the request is built — never inline `if` checks scattered across resource methods. Note `validate_max_length` counts **UTF-16 code units**, matching the service; Python's `len()` counts code points and would accept an over-long message containing non-BMP characters.
 4. Add rows to the request-building, response-parsing and validation tests for the new endpoint.
-5. Re-export anything new that belongs in the public surface from `adsefid/__init__.py`.
+5. Re-export anything new that belongs in the public surface from `adsefid/__init__.py` (every request/result model is exported there; `tests/test_exports.py` checks `__all__` resolves).
 
 ## Hard rules
 

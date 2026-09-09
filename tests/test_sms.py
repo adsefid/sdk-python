@@ -7,7 +7,7 @@ from decimal import Decimal
 
 import pytest
 
-from adsefid import AdsefidValidationError, WebServiceMessageStatus
+from adsefid import AdsefidValidationError, WebServiceMessageStatus, WebServiceResponseCode
 from adsefid.models.sms import (
     BulkReceptor,
     CancelSmsRequest,
@@ -109,6 +109,11 @@ async def test_send_bulk_partial_success_is_not_an_error(make_client) -> None:
     assert result.receptors[1].message_id is None
     assert result.total_count == 2
     assert result.counts["2025"] == 1
+    # The typed views split the WebServiceCode by range, so a caller never compares raw ints.
+    assert result.receptors[0].status is WebServiceMessageStatus.SCHEDULED
+    assert result.receptors[0].error_code is None
+    assert result.receptors[1].status is None
+    assert result.receptors[1].error_code is WebServiceResponseCode.RECEPTOR_BLACKLISTED
 
 
 async def test_send_p2p_partial_success_is_not_an_error(make_client) -> None:
@@ -123,6 +128,10 @@ async def test_send_p2p_partial_success_is_not_an_error(make_client) -> None:
     )
 
     assert [item.raw_status for item in result.messages] == [1000, 2014]
+    assert [item.error_code for item in result.messages] == [
+        None,
+        WebServiceResponseCode.INVALID_RECEPTOR,
+    ]
 
 
 async def test_send_template_keeps_exact_numeric_values(make_client) -> None:

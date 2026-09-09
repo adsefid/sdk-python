@@ -14,17 +14,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
 
       - run: make deps
       - run: make lint
       - run: make build
       - run: make test
+
+  # Stable check name for branch protection, regardless of the matrix.
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "all matrix jobs passed"
