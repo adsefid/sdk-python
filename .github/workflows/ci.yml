@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -31,3 +31,10 @@ jobs:
       - run: make lint
       - run: make build
       - run: make test
+
+  # Stable check name for branch protection, regardless of the matrix.
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "all matrix jobs passed"
