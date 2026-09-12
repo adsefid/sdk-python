@@ -7,7 +7,7 @@ its leading zeros and Decimal("1.50") its trailing zero, where the numbers 1234
 and 1.5 would not.
 
 Usage:
-    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=3000xxxx python examples/templates.py
+    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000XXX python examples/templates.py
 """
 
 from __future__ import annotations

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
-
 from .enums import WebServiceResponseCode
+from .models.errors import ApiErrorDetails
 
 
 class AdsefidError(Exception):
@@ -22,8 +21,7 @@ class AdsefidApiError(AdsefidError):
         name: The error name string from the response envelope (or a synthesized
             `HTTP_<status>` when the body had no error envelope).
         http_status_code: The HTTP status code of the response.
-        details: Endpoint-specific error detail, shape varies (validation map,
-            per-item bulk/P2P list, cancel-specific map, or `None`).
+        details: Structured field/item error details, or `None` when absent.
     """
 
     def __init__(
@@ -33,7 +31,7 @@ class AdsefidApiError(AdsefidError):
         code: WebServiceResponseCode | int,
         name: str,
         http_status_code: int,
-        details: dict[str, Any] | list[Any] | None = None,
+        details: ApiErrorDetails | None = None,
     ) -> None:
         super().__init__(message)
         self.code = code

@@ -49,22 +49,12 @@ def _validate_send_bulk(request: SendBulkSmsRequest) -> None:
     validate_non_empty(request.line_number, field_name="line_number")
     if not request.receptors:
         raise AdsefidValidationError("'receptors' must contain at least 1 item")
-    for receptor in request.receptors:
-        validate_non_empty(receptor.receptor, field_name="receptors[].receptor")
-        validate_local_id(receptor.local_id, field_name="receptors[].local_id")
 
 
 def _validate_send_p2p(request: SendP2pSmsRequest) -> None:
     validate_non_empty(request.line_number, field_name="line_number")
     if not request.messages:
         raise AdsefidValidationError("'messages' must contain at least 1 item")
-    for message in request.messages:
-        validate_non_empty(message.receptor, field_name="messages[].receptor")
-        validate_non_empty(message.message, field_name="messages[].message")
-        validate_max_length(
-            message.message, field_name="messages[].message", max_length=SMS_MESSAGE_MAX_LENGTH
-        )
-        validate_local_id(message.local_id, field_name="messages[].local_id")
 
 
 def _validate_send_template(request: SendTemplateSmsRequest) -> None:
@@ -116,8 +106,8 @@ class SmsResource:
 
         A per-receptor delivery failure does not raise: it is reported as a normal
         typed result via each item's `status`/`raw_status` field. Raises
-        AdsefidValidationError for empty `receptors`, empty/too-long `message`, or an
-        invalid `local_id` on any receptor.
+        AdsefidValidationError for empty `receptors` or empty/too-long request-level
+        fields. Item errors are returned in the partial API response.
         """
         _validate_send_bulk(request)
         data = self._client.request("POST", "/v1/sms/bulk", json_body=request.to_dict())
@@ -127,8 +117,8 @@ class SmsResource:
         """Send a distinct message per receptor in one call (`POST /v1/sms/p2p`).
 
         Like `send_bulk`, a per-message delivery failure is a normal typed result,
-        not an exception. Raises AdsefidValidationError for empty `messages`, or an
-        empty/too-long message body or invalid `local_id` on any entry.
+        not an exception. Raises AdsefidValidationError for empty `messages` or
+        `line_number`. Item errors are returned in the partial API response.
         """
         _validate_send_p2p(request)
         data = self._client.request("POST", "/v1/sms/p2p", json_body=request.to_dict())

@@ -5,7 +5,7 @@ call; their combined distinct count may not exceed 2000, which the SDK checks
 before making the request.
 
 Usage:
-    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=3000xxxx python examples/status_and_cancel.py
+    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000XXX python examples/status_and_cancel.py
 """
 
 from __future__ import annotations

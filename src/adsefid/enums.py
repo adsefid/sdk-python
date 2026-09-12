@@ -1,4 +1,4 @@
-"""Enumerations defined by the adsefid.com Web Service API (doc v1.12.0, section 3)."""
+"""Enumerations defined by the adsefid.com Web Service API (doc v1.13.0, section 3)."""
 
 from enum import Enum, IntEnum
 
@@ -38,7 +38,7 @@ class WebServiceMessageStatus(IntEnum):
 
 
 class WebServiceResponseCode(IntEnum):
-    """See doc section 3.4. Values 2000-2045."""
+    """See doc section 3.4. Values 2000-2047."""
 
     INTERNAL_ERROR = 2000
     INVALID_PLAN = 2001
@@ -86,6 +86,8 @@ class WebServiceResponseCode(IntEnum):
     INVALID_FILE = 2043
     ACCESS_DENIED = 2044
     REJECTED = 2045
+    INVALID_MESSAGE_IDS = 2046
+    FILE_TOO_LARGE = 2047
 
 
 class TemplateState(str, Enum):

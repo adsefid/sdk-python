@@ -10,6 +10,8 @@ from adsefid import (
     AdsefidError,
     AdsefidRateLimitError,
     AdsefidTransportError,
+    ApiErrorDetails,
+    ApiFieldError,
     WebServiceResponseCode,
 )
 from tests.conftest import unwrap
@@ -70,9 +72,7 @@ async def test_error_envelopes_map_to_typed_exceptions(
     assert isinstance(error, AdsefidRateLimitError) is rate_limited
 
 
-async def test_validation_details_survive_intact(make_client) -> None:
-    """The real shape of a validation failure: a field-to-message map under
-    `errors`, with plain string values."""
+async def test_validation_details_are_strongly_typed(make_client) -> None:
     client, _ = make_client(
         status_code=400, content=fixture_bytes("errors/error.invalid_parameter.json")
     )
@@ -80,12 +80,11 @@ async def test_validation_details_survive_intact(make_client) -> None:
     with pytest.raises(AdsefidApiError) as caught:
         await unwrap(client.user.get_templates())
 
-    assert caught.value.details == {
-        "errors": {
-            "take": "invalid value for take",
-            "state": "invalid value for state",
-        }
-    }
+    details = caught.value.details
+    assert details is not None
+    assert details.errors is not None
+    assert details.errors["take"].code is WebServiceResponseCode.INVALID_PARAMETER
+    assert details.errors["state"].name == "INVALID_PARAMETER"
 
 
 @pytest.mark.parametrize(
@@ -93,42 +92,60 @@ async def test_validation_details_survive_intact(make_client) -> None:
     [
         pytest.param(
             "errors/error.details_single.json",
-            {"receptor": "invalid value for receptor"},
-            id="single send is a flat field to message map",
+            {"errors": {"receptor": {"code": 2014, "name": "INVALID_RECEPTOR"}}},
+            id="single send field errors",
         ),
         pytest.param(
             "errors/error.details_bulk.json",
             {
-                "errors": {"line_number": "invalid value for line_number"},
-                "messages": [
-                    {"index": 0, "errors": {"receptor": "invalid value for receptor"}},
+                "items": [
+                    {
+                        "index": 0,
+                        "errors": {"receptor": {"code": 2014, "name": "INVALID_RECEPTOR"}},
+                    },
                     {
                         "index": 2,
-                        "errors": {
-                            "local_id": "invalid value for local_id",
-                            "message": "invalid value for message",
-                        },
+                        "errors": {"local_id": {"code": 2007, "name": "DUPLICATE_LOCAL_ID"}},
                     },
                 ],
             },
-            id="bulk carries per-item errors keyed by index",
+            id="bulk item errors",
         ),
         pytest.param(
             "errors/error.details_cancel.json",
-            {"local_ids": ["order-10001", "order-10002"]},
-            id="cancel is the one shape whose values are arrays",
+            {
+                "errors": {
+                    "order-10001": {"code": 2029, "name": "INVALID_LOCAL_IDS"},
+                    "order-10002": {"code": 2029, "name": "INVALID_LOCAL_IDS"},
+                }
+            },
+            id="cancel errors keyed by rejected id",
         ),
     ],
 )
-async def test_every_details_shape_survives_unchanged(make_client, fixture, expected) -> None:
-    """`details` is deliberately untyped because the service uses a different
-    shape per endpoint. Each real shape must come through uncoerced."""
+async def test_every_details_shape_maps_to_the_shared_model(make_client, fixture, expected) -> None:
     client, _ = make_client(status_code=400, content=fixture_bytes(fixture))
 
     with pytest.raises(AdsefidApiError) as caught:
         await unwrap(client.user.get_info())
 
-    assert caught.value.details == expected
+    assert caught.value.details is not None
+    assert caught.value.details.to_dict() == expected
+
+
+async def test_an_unknown_nested_code_keeps_its_raw_integer(make_client) -> None:
+    body = (
+        b'{"status":"error","error":{"code":2024,"name":"INVALID_PARAMETER",'
+        b'"details":{"errors":{"future":{"code":2999,"name":"FUTURE_CODE"}}}}}'
+    )
+    client, _ = make_client(status_code=400, content=body)
+
+    with pytest.raises(AdsefidApiError) as caught:
+        await unwrap(client.user.get_info())
+
+    details = caught.value.details
+    assert details is not None and details.errors is not None
+    assert details.errors["future"].code == 2999
 
 
 async def test_an_unmapped_code_is_carried_through_not_rejected(make_client) -> None:
@@ -224,7 +241,11 @@ def test_the_exception_hierarchy() -> None:
 
 def test_the_repr_carries_the_diagnostic_fields() -> None:
     error = AdsefidApiError(
-        "boom", code=2024, name="INVALID_PARAMETER", http_status_code=400, details={"a": 1}
+        "boom",
+        code=2024,
+        name="INVALID_PARAMETER",
+        http_status_code=400,
+        details=ApiErrorDetails(errors={"a": ApiFieldError(code=2024, name="INVALID_PARAMETER")}),
     )
     rendered = repr(error)
     assert "2024" in rendered

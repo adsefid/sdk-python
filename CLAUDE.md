@@ -11,7 +11,7 @@ behavior change here should generally be considered for parity there.
 
 The API surface (endpoints, field names, types, validation rules, enums, example payloads,
 webhook behavior) is defined by the published adsefid.com SMS Web Service API documentation.
-This SDK is verified against doc version v1.12.0. Re-read the relevant documentation before
+This SDK is verified against doc version v1.13.0. Re-read the relevant documentation before
 changing any endpoint, request/response model, or enum. The SDK follows independent Semantic
 Versioning from `pyproject.toml`; never copy the API-document version into package metadata.
 Record both versions in the README.
@@ -29,9 +29,11 @@ notes over an ambiguous doc reading:
   some templates; this SDK intentionally models only the two documented values — do not add
   support for it without first confirming it against current, documented API behavior. See
   `src/adsefid/enums.py`.
-- `error.details` shape varies per endpoint and is intentionally untyped. It may be a validation
-  map, a bulk/P2P per-item list, a cancel-specific map, or absent entirely — never give it a
-  strong type; decode it defensively per endpoint if you need it.
+- `error.details` uses the shared typed `ApiErrorDetails` shape: optional `errors` maps field names
+  (or rejected cancel IDs) to `ApiFieldError`, and optional `items` carries indexed `ApiItemError`
+  entries. Preserve unknown numeric codes.
+- Bulk/P2P item validation happens in the API. Validate request-level fields locally, but send item
+  values unchanged so valid siblings can still succeed.
 
 ## Architecture map
 
@@ -52,6 +54,7 @@ src/adsefid/
 │   └── user.py           UserResource + AsyncUserResource — 4 ops each
 ├── models/
 │   ├── common.py         shared envelope/status/cancel dataclasses reused by sms + messenger
+│   ├── errors.py         typed API error details, field errors, and indexed item errors
 │   ├── sms.py            request/response dataclasses for the 7 SMS ops
 │   ├── messenger.py       request/response dataclasses for the 7 messenger ops
 │   └── user.py            request/response dataclasses for the 4 user ops
