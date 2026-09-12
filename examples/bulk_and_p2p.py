@@ -6,7 +6,7 @@ WebServiceCode the service sent; `status` names it when the item was accepted
 and `error_code` names it when that one receptor was rejected.
 
 Usage:
-    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=3000xxxx python examples/bulk_and_p2p.py
+    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000XXX python examples/bulk_and_p2p.py
 """
 
 from __future__ import annotations

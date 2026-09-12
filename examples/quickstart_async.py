@@ -27,7 +27,7 @@ async def main() -> None:
             result = await client.sms.send_single(
                 SendSingleSmsRequest(
                     receptor="98912xxxxxxx",
-                    line_number="3000xxxx",
+                    line_number="983000XXX",
                     message="Hello from adsefid",
                 )
             )

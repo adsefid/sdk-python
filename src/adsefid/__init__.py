@@ -1,4 +1,4 @@
-"""Python client SDK for the adsefid.com SMS Web Service API (doc v1.12.0)."""
+"""Python client SDK for the adsefid.com SMS Web Service API (doc v1.13.0)."""
 
 from .async_client import AdsefidAsyncClient
 from .client import AdsefidClient
@@ -25,6 +25,7 @@ from .models.common import (
     StatusResult,
     TemplateParameterValue,
 )
+from .models.errors import ApiErrorDetails, ApiFieldError, ApiItemError
 from .models.messenger import (
     CancelMessengerRequest,
     MessengerBulkReceptor,
@@ -84,6 +85,9 @@ __all__ = [
     "TemplateState",
     "WebServiceMessageStatus",
     "WebServiceResponseCode",
+    "ApiErrorDetails",
+    "ApiFieldError",
+    "ApiItemError",
     # SMS models
     "SendSingleSmsRequest",
     "SendSingleSmsResult",

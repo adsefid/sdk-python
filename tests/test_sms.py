@@ -89,12 +89,17 @@ async def test_send_single_parses_the_response(make_client) -> None:
 
 async def test_send_bulk_partial_success_is_not_an_error(make_client) -> None:
     """HTTP 200 with per-receptor failures is a normal typed response."""
-    client, _ = make_client(content=fixture_bytes("envelopes/sms.send_bulk.partial_success.json"))
+    client, recorder = make_client(
+        content=fixture_bytes("envelopes/sms.send_bulk.partial_success.json")
+    )
 
     result = await unwrap(
         client.sms.send_bulk(
             SendBulkSmsRequest(
-                receptors=[BulkReceptor(receptor="a"), BulkReceptor(receptor="b")],
+                receptors=[
+                    BulkReceptor(receptor="a"),
+                    BulkReceptor(receptor="", local_id="-bad"),
+                ],
                 message="m",
                 line_number="3000xxxx",
             )
@@ -114,15 +119,22 @@ async def test_send_bulk_partial_success_is_not_an_error(make_client) -> None:
     assert result.receptors[0].error_code is None
     assert result.receptors[1].status is None
     assert result.receptors[1].error_code is WebServiceResponseCode.RECEPTOR_BLACKLISTED
+    assert len(recorder.only.json["receptors"]) == 2
 
 
 async def test_send_p2p_partial_success_is_not_an_error(make_client) -> None:
-    client, _ = make_client(content=fixture_bytes("envelopes/sms.send_p2p.partial_success.json"))
+    client, recorder = make_client(
+        content=fixture_bytes("envelopes/sms.send_p2p.partial_success.json")
+    )
 
     result = await unwrap(
         client.sms.send_p2p(
             SendP2pSmsRequest(
-                messages=[P2pMessage(receptor="a", message="x")], line_number="3000xxxx"
+                messages=[
+                    P2pMessage(receptor="a", message="x"),
+                    P2pMessage(receptor="", message=""),
+                ],
+                line_number="3000xxxx",
             )
         )
     )
@@ -132,6 +144,7 @@ async def test_send_p2p_partial_success_is_not_an_error(make_client) -> None:
         None,
         WebServiceResponseCode.INVALID_RECEPTOR,
     ]
+    assert len(recorder.only.json["messages"]) == 2
 
 
 async def test_send_template_keeps_exact_numeric_values(make_client) -> None:

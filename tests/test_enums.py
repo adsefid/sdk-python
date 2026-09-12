@@ -38,6 +38,8 @@ class TestDocumentedWireValues:
     def test_response_code_values(self) -> None:
         assert WebServiceResponseCode(2024) is WebServiceResponseCode.INVALID_PARAMETER
         assert WebServiceResponseCode(2035) is WebServiceResponseCode.MESSAGE_LIMIT_REACHED
+        assert WebServiceResponseCode(2046) is WebServiceResponseCode.INVALID_MESSAGE_IDS
+        assert WebServiceResponseCode(2047) is WebServiceResponseCode.FILE_TOO_LARGE
 
 
 class TestPermissiveParsing:

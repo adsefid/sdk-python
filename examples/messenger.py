@@ -38,9 +38,9 @@ def main() -> int:
         # upload_file takes a path, raw bytes, or an open binary file. A path or
         # file object is streamed rather than buffered whole.
         uploaded = client.messenger.upload_file(
-            b"Statement for September 2026\nTotal: 1,250,000 IRR\n",
-            filename="statement.txt",
-            content_type="text/plain",
+            b"%PDF-1.1\n%%EOF\n",
+            filename="statement.pdf",
+            content_type="application/pdf",
         )
         print(f"\nuploaded attachment as file_id {uploaded.file_id}")
 

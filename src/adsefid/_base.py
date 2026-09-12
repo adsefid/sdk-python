@@ -8,6 +8,7 @@ import httpx
 
 from .enums import parse_response_code
 from .exceptions import AdsefidApiError, AdsefidRateLimitError, AdsefidTransportError
+from .models.errors import ApiErrorDetails
 
 API_KEY_HEADER = "X-API-KEY"
 _RATE_LIMIT_RAW_CODES = {2035, 2036}
@@ -88,7 +89,8 @@ def _raise_api_error(http_status_code: int, parsed: Any) -> NoReturn:
         error = parsed["error"]
         raw_code = error.get("code", http_status_code)
         name = error.get("name") or f"HTTP_{http_status_code}"
-        details = error.get("details")
+        raw_details = error.get("details")
+        details = ApiErrorDetails.from_dict(raw_details) if isinstance(raw_details, dict) else None
         if isinstance(raw_code, int):
             enum_code, raw_code_int = parse_response_code(raw_code)
             code: Any = enum_code if enum_code is not None else raw_code_int

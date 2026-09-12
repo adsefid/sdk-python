@@ -43,7 +43,7 @@ async def test_send_single(make_client) -> None:
 
 async def test_send_bulk_partial_success_is_not_an_error(make_client) -> None:
     """HTTP 200 with per-receptor failures is a normal typed response."""
-    client, _ = make_client(
+    client, recorder = make_client(
         content=fixture_bytes("envelopes/messenger.send_bulk.partial_success.json")
     )
 
@@ -52,7 +52,7 @@ async def test_send_bulk_partial_success_is_not_an_error(make_client) -> None:
             SendBulkMessengerRequest(
                 receptors=[
                     MessengerBulkReceptor(receptor="a"),
-                    MessengerBulkReceptor(receptor="b"),
+                    MessengerBulkReceptor(receptor="", local_id="-bad"),
                 ],
                 message="m",
                 profile="p",
@@ -68,22 +68,28 @@ async def test_send_bulk_partial_success_is_not_an_error(make_client) -> None:
     assert result.receptors[1].message_id is None
     assert result.counts["2025"] == 1
     assert result.total_count == 2
+    assert len(recorder.only.json["receptors"]) == 2
 
 
 async def test_send_p2p_partial_success_is_not_an_error(make_client) -> None:
-    client, _ = make_client(
+    client, recorder = make_client(
         content=fixture_bytes("envelopes/messenger.send_p2p.partial_success.json")
     )
 
     result = await unwrap(
         client.messenger.send_p2p(
             SendP2pMessengerRequest(
-                receptors=[MessengerP2pReceptor(receptor="a", message="m")], profile="p"
+                receptors=[
+                    MessengerP2pReceptor(receptor="a", message="m"),
+                    MessengerP2pReceptor(receptor="", message=""),
+                ],
+                profile="p",
             )
         )
     )
 
     assert [item.raw_status for item in result.receptors] == [1000, 2014]
+    assert len(recorder.only.json["receptors"]) == 2
 
 
 async def test_send_template_keeps_leading_zeros(make_client) -> None:

@@ -30,7 +30,7 @@ client = AdsefidClient(api_key=os.environ["ADSEFID_API_KEY"])
 result = client.sms.send_single(
     SendSingleSmsRequest(
         receptor="98912xxxxxxx",
-        line_number="3000xxxx",
+        line_number="983000XXX",
         message="Hello from adsefid",
     )
 )
@@ -53,7 +53,7 @@ async def main() -> None:
         result = await client.sms.send_single(
             SendSingleSmsRequest(
                 receptor="98912xxxxxxx",
-                line_number="3000xxxx",
+                line_number="983000XXX",
                 message="Hello from adsefid",
             )
         )
@@ -144,17 +144,12 @@ except AdsefidApiError as e:
     print("API error:", e.code, e.name, e.http_status_code, e.details)
 ```
 
-`details` is not one shape — the service picks one per endpoint:
+Bulk/P2P item values are sent unchanged so the API can accept or reject them independently; only
+request-level fields are prevalidated.
 
-| When | Shape | Example |
-|---|---|---|
-| Request validation (`2024 INVALID_PARAMETER`) | `{"errors": {field: message}}` — snake_case field paths, **string** values | `{"errors":{"take":"invalid value for take"}}` |
-| Single send | `{field: message}` — flat, no wrapper | `{"receptor":"invalid value for receptor"}` |
-| Bulk / P2P | `{"errors": {...}, "messages": [{"index": n, "errors": {...}}]}` — `index` is the position in *your* array, so gaps are normal | `{"errors":{},"messages":[{"index":2,"errors":{"local_id":"invalid value for local_id"}}]}` |
-| Cancel | `{field: [value, ...]}` — the one shape whose values are **arrays** | `{"local_ids":["order-10001"]}` |
-| Anything else | absent or `null` | |
-
-Decode it defensively for the endpoint you called rather than assuming a single shape.
+`e.details` is an optional `ApiErrorDetails`. `errors` maps field names (or rejected cancel IDs) to
+`ApiFieldError`; `items` contains indexed `ApiItemError` entries for rejected bulk/P2P items.
+Each nested code is a `WebServiceResponseCode` when known and its raw `int` otherwise.
 
 ### Rate limits
 
@@ -166,7 +161,7 @@ All enums live in `adsefid.enums` and are exported from the top-level package:
 
 - `LineSelector` (`IntEnum`, 0-5) — see doc §3.1
 - `WebServiceMessageStatus` (`IntEnum`, 1000-1999) — see doc §3.2. Parsed **permissively**: response dataclasses expose both a `status: WebServiceMessageStatus | None` field and a `raw_status: int` field, so an unrecognized future status code never crashes parsing.
-- `WebServiceResponseCode` (`IntEnum`, 2000-2045) — see doc §3.4. `AdsefidApiError.code` is the enum member when recognized, otherwise the raw `int`.
+- `WebServiceResponseCode` (`IntEnum`, 2000-2047) — see doc §3.4. `AdsefidApiError.code` is the enum member when recognized, otherwise the raw `int`.
 - `TemplateState` (`str, Enum`: `pendingapproval` / `approved` / `rejected`) — see doc §3.5
 - `TemplateParameterType` (`str, Enum`: `string` / `number`) — see doc §3.6. This is the doc's complete *documented* public set; the live server has been observed to also emit an undocumented `url` value which is intentionally not exposed here (such a parameter is dropped from `UserTemplate.parameters` rather than surfaced as a value you cannot match on).
 
@@ -189,7 +184,7 @@ client.sms.send_template(
             "rate": 19.99,  # a float, where rounding is acceptable
         },
         receptor="09120000000",
-        line_number="3000xxxx",
+        line_number="983000XXX",
     )
 )
 ```
@@ -215,6 +210,9 @@ with open("./brochure.pdf", "rb") as f:
         f, filename="brochure.pdf", content_type="application/pdf"
     )
 ```
+
+The service enforces its documented MIME allowlist and 15 MB limit. Oversized uploads return
+`FILE_TOO_LARGE` (2047, HTTP 413).
 
 ## Webhook verification
 
@@ -283,7 +281,7 @@ Return a `2xx` quickly and process asynchronously where possible — the platfor
 This SDK follows Semantic Versioning independently of the API documentation.
 
 - SDK version: **`0.4.0`** (`version` in `pyproject.toml`; `adsefid.__version__` reads package metadata)
-- Verified API documentation: **`v1.12.0`**
+- Verified API documentation: **`v1.13.0`**
 
 SDK releases use `v<SDK_VERSION>` tags. The two version numbers move independently.
 
@@ -307,7 +305,7 @@ single test body, so pytest reports each one twice (`[sync]` / `[async]`). Golde
 ```bash
 pip install -e ".[examples]"
 export ADSEFID_API_KEY=...
-export ADSEFID_LINE_NUMBER=3000xxxx
+export ADSEFID_LINE_NUMBER=983000XXX
 
 python examples/account.py             # account info, lines, profiles, templates; client config
 python examples/quickstart.py          # send one SMS, with full error triage
