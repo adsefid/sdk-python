@@ -106,13 +106,13 @@ Monetary response fields (`cost`, `total_cost`, and `credit_left`) use `float` a
 | `client.sms` | `send_p2p(request)` | `POST /v1/sms/p2p` | Partial success is a normal typed return, not an exception |
 | `client.sms` | `send_template(request)` | `POST /v1/sms/template` | |
 | `client.sms` | `get_status(message_ids=..., local_ids=...)` | `GET /v1/sms/status` | |
-| `client.sms` | `cancel(request)` | `POST /v1/sms/cancel` | |
+| `client.sms` | `cancel(request)` | `POST /v1/sms/cancel` | Awaiting approval, queued, or scheduled; no refund; max 2,000 distinct IDs combined |
 | `client.sms` | `get_received(line_number=..., count=..., since=...)` | `GET /v1/sms/receive` | |
 | `client.messenger` | `send_single(request)` | `POST /v1/messenger/single` | |
 | `client.messenger` | `send_bulk(request)` | `POST /v1/messenger/bulk` | Partial success is a normal typed return, not an exception |
 | `client.messenger` | `send_p2p(request)` | `POST /v1/messenger/p2p` | Partial success is a normal typed return, not an exception |
 | `client.messenger` | `upload_file(file, filename=..., content_type=...)` | `POST /v1/messenger/file` | Accepts a path, bytes, or an open file object |
-| `client.messenger` | `cancel(request)` | `POST /v1/messenger/cancel` | |
+| `client.messenger` | `cancel(request)` | `POST /v1/messenger/cancel` | Awaiting approval, queued, or scheduled; no refund; max 2,000 distinct IDs combined |
 | `client.messenger` | `send_template(request)` | `POST /v1/messenger/template` | |
 | `client.messenger` | `get_status(message_ids=..., local_ids=...)` | `GET /v1/messenger/status` | |
 | `client.user` | `get_info()` | `GET /v1/user/info` | |
@@ -281,7 +281,7 @@ Return a `2xx` quickly and process asynchronously where possible — the platfor
 This SDK follows Semantic Versioning independently of the API documentation.
 
 - SDK version: **`0.5.0`** (`version` in `pyproject.toml`; `adsefid.__version__` reads package metadata)
-- Verified API documentation: **`v1.13.0`**
+- Verified API documentation: **`v1.14.0`**
 
 SDK releases use `v<SDK_VERSION>` tags. The two version numbers move independently.
 

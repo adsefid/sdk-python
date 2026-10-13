@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from .._base import expect_object
 from .._serialization import (
+    MAX_CANCEL_IDS,
     SMS_MESSAGE_MAX_LENGTH,
     format_datetime,
     join_csv,
@@ -65,8 +66,7 @@ def _validate_send_template(request: SendTemplateSmsRequest) -> None:
 
 
 def _validate_cancel(request: CancelSmsRequest) -> None:
-    if not request.message_ids and not request.local_ids:
-        raise AdsefidValidationError("At least one of 'message_ids'/'local_ids' must be non-empty")
+    validate_ids_count(request.message_ids, request.local_ids, max_total=MAX_CANCEL_IDS)
 
 
 def _receive_query_params(
@@ -152,9 +152,9 @@ class SmsResource:
         return StatusResult.from_dict(expect_object(data))
 
     def cancel(self, request: CancelSmsRequest) -> CancelResult:
-        """Cancel scheduled/pending messages (`POST /v1/sms/cancel`).
+        """Cancel eligible SMS messages (`POST /v1/sms/cancel`).
 
-        Raises AdsefidValidationError if both `message_ids` and `local_ids` are empty.
+        Raises AdsefidValidationError for empty IDs or over 2,000 distinct IDs combined.
         """
         _validate_cancel(request)
         data = self._client.request("POST", "/v1/sms/cancel", json_body=request.to_dict())
