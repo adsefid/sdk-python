@@ -8,6 +8,7 @@ import pytest
 
 from adsefid import AdsefidValidationError
 from adsefid._serialization import (
+    MAX_CANCEL_IDS,
     MAX_RECEIVE_COUNT,
     MAX_STATUS_IDS,
     MAX_TEMPLATE_TAKE,
@@ -98,6 +99,7 @@ class TestLimitsMatchTheService:
         assert SMS_MESSAGE_MAX_LENGTH == limits["sms_message_max_length"]
         assert MESSENGER_MESSAGE_MAX_LENGTH == limits["messenger_message_max_length"]
         assert MAX_STATUS_IDS == limits["combined_status_ids_max"]
+        assert MAX_CANCEL_IDS == limits["combined_cancel_ids_max"]
         assert MIN_RECEIVE_COUNT == limits["receive_count_min"]
         assert MAX_RECEIVE_COUNT == limits["receive_count_max"]
         assert MIN_TEMPLATE_TAKE == limits["templates_take_min"]
