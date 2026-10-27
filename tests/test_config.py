@@ -100,8 +100,44 @@ async def test_a_custom_user_agent_reaches_the_wire() -> None:
     client = AdsefidClient("k", http_client=http, user_agent="my-app/2.1")
 
     try:
-        client.request("GET", "/v1/user/lines")
+        client.user.get_lines()
     except Exception:  # noqa: BLE001 - the payload shape is irrelevant here
         pass
 
     assert recorder.only.headers["User-Agent"] == "my-app/2.1"
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"base_url": "api.adsefid.com"},
+        {"base_url": "ftp://api.adsefid.com"},
+        {"base_url": "https://"},
+        {"timeout": 0},
+        {"timeout": -1.0},
+        {"timeout": float("nan")},
+        {"timeout": float("inf")},
+    ],
+)
+def test_invalid_base_url_or_timeout_is_rejected(kwargs: dict[str, object]) -> None:
+    with pytest.raises(AdsefidValidationError):
+        AdsefidClient("k", **kwargs)  # type: ignore[arg-type]
+
+
+async def test_with_options_applies_a_timeout_and_shares_the_connection_pool() -> None:
+    seen: list[object] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.extensions.get("timeout"))
+        return httpx.Response(200, json={"status": "success", "data": []})
+
+    http = httpx.Client(transport=httpx.MockTransport(handler))
+    client = AdsefidClient("k", http_client=http)
+
+    client.with_options(timeout=2.5).user.get_lines()
+    client.user.get_lines()
+
+    assert seen[0] == {"connect": 2.5, "read": 2.5, "write": 2.5, "pool": 2.5}
+    assert seen[1] != seen[0]
+    client.with_options(timeout=1).close()
+    assert not http.is_closed

@@ -17,7 +17,6 @@ from adsefid._serialization import (
     MIN_TEMPLATE_TAKE,
     SMS_MESSAGE_MAX_LENGTH,
     format_datetime,
-    join_csv,
     parse_datetime,
     utf16_length,
     validate_ids_count,
@@ -167,20 +166,6 @@ class TestNonEmpty:
         validate_non_empty("x", field_name="receptor")
 
 
-class TestJoinCsv:
-    @pytest.mark.parametrize(
-        ("values", "expected"),
-        [
-            (None, None),
-            ([], None),
-            (["a"], "a"),
-            (["a", "b", "c"], "a,b,c"),
-        ],
-    )
-    def test_join(self, values, expected) -> None:
-        assert join_csv(values) == expected
-
-
 class TestDatetimes:
     def test_round_trip(self) -> None:
         value = datetime(2026, 4, 4, 11, 0, tzinfo=timezone.utc)
@@ -189,6 +174,22 @@ class TestDatetimes:
     def test_none_passes_through(self) -> None:
         assert parse_datetime(None) is None
         assert format_datetime(None) is None
+
+    @pytest.mark.parametrize(
+        ("raw", "microsecond"),
+        [
+            ("2026-09-19T11:43:10.4030292+03:30", 403029),
+            ("2026-09-19T11:43:10.403+03:30", 403000),
+            ("2026-09-19T11:43:10.5+00:00", 500000),
+            ("2026-09-19T11:43:10.9538204Z", 953820),
+            ("2026-09-19T11:43:10+03:30", 0),
+        ],
+    )
+    def test_fractional_seconds_of_any_length(self, raw: str, microsecond: int) -> None:
+        """The service sends up to 7 fractional digits; the 3.10 floor accepts only 3 or 6."""
+        parsed = parse_datetime(raw)
+        assert parsed is not None
+        assert parsed.microsecond == microsecond
 
     def test_a_trailing_z_is_accepted(self) -> None:
         """`datetime.fromisoformat` on the 3.10 floor rejects 'Z' on its own."""

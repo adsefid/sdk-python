@@ -1,11 +1,18 @@
+# Targets run through uv. CI installs the dev extra with pip and overrides
+# RUN= and BUILD= to call the tools directly.
+RUN ?= uv run --extra dev
+BUILD ?= uv build
+
 .PHONY: deps fmt lint build test
 deps:
-	pip install -e ".[dev]"
+	uv sync --extra dev
 fmt:
-	ruff format .
+	$(RUN) ruff format .
 lint:
-	ruff check . && ruff format --check . && mypy src/adsefid
+	$(RUN) ruff check .
+	$(RUN) ruff format --check .
+	$(RUN) mypy src/adsefid
 build:
-	python -m build
+	$(BUILD)
 test:
-	python -m pytest
+	$(RUN) pytest

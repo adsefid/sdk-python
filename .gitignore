@@ -21,3 +21,4 @@ htmlcov/
 .idea/
 .vscode/
 *.iml
+uv.lock

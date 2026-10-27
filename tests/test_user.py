@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 import pytest
 
 from adsefid import AdsefidValidationError, TemplateParameterType, TemplateState
@@ -61,19 +63,21 @@ async def test_get_templates_parses_the_documented_shape(make_client) -> None:
     assert item.description is None
 
 
-async def test_get_templates_drops_undocumented_parameter_types(make_client) -> None:
-    """The live service emits a parameter type this SDK does not model.
+async def test_get_templates_preserves_unknown_parameter_types(make_client) -> None:
+    """A parameter type this SDK has no member for.
 
-    Dropping the entry keeps the typed map honest rather than surfacing a value
-    callers cannot match on.
+    It stays a plain string so callers can see which parameters a template needs.
     """
     client, _ = make_client(content=fixture_bytes("envelopes/user.get_templates.unknown_type.json"))
 
     result = await unwrap(client.user.get_templates())
 
-    parameters = result.items[0].parameters
-    assert "link" not in parameters
-    assert set(parameters) == {"OTPCode", "amount"}
+    assert result.items[0].parameters == {
+        "OTPCode": "string",
+        "link": "future_type",
+        "amount": "number",
+    }
+    assert result.items[0].parameters["link"] == "future_type"
 
 
 async def test_get_templates_omits_absent_query_params(make_client) -> None:
@@ -110,3 +114,34 @@ async def test_get_templates_rejects_out_of_range_paging(make_client, skip, take
         await unwrap(client.user.get_templates(skip=skip, take=take))
 
     assert recorder.requests == []
+
+
+async def test_an_unknown_line_selector_and_template_state_are_preserved(make_client) -> None:
+    lines = (
+        b'{"status":"success","data":[{"line_number":"1","line_selector":9,'
+        b'"line_name":"x","enabled":true}]}'
+    )
+    client, _ = make_client(content=lines)
+    assert (await unwrap(client.user.get_lines()))[0].line_selector == 9
+
+    body = (
+        b'{"status":"success","data":{"items":[{"template_id":"t","content":"c","parameters":{},'
+        b'"state":"archived","description":null,"created_at":"2026-09-02T10:30:00+03:30",'
+        b'"updated_at":"2026-09-02T11:00:00+03:30"}],"total":1}}'
+    )
+    client, _ = make_client(content=body)
+    assert (await unwrap(client.user.get_templates())).items[0].state == "archived"
+
+
+async def test_money_is_an_exact_decimal(make_client) -> None:
+    body = (
+        b'{"status":"success","data":{"name":"n","company_name":null,"credit_left":1250000.10,'
+        b'"email":null,"phone":null,"account_status":"active"}}'
+    )
+    client, _ = make_client(content=body)
+
+    info = await unwrap(client.user.get_info())
+
+    assert info.credit_left == Decimal("1250000.10")
+    assert str(info.credit_left) == "1250000.10"
+    assert info.company_name is None

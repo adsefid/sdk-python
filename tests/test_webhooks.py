@@ -310,3 +310,32 @@ def test_event_type_values() -> None:
     assert WebhookEventType.RECEIVE == "receive"
     assert WebhookEventType.STATUS == "status"
     assert WebhookEventType.MESSENGER_STATUS == "messenger.status"
+
+
+@pytest.mark.parametrize("secret", ["", b"", "   "])
+def test_an_empty_key_never_verifies(secret: str | bytes) -> None:
+    import hashlib
+    import hmac
+
+    body = golden_body()
+    timestamp = now_timestamp()
+    digest = hmac.new(b"", f"{timestamp}.".encode() + body, hashlib.sha256).digest()
+    signature = "v1=" + base64.b64encode(digest).decode("ascii")
+
+    with pytest.raises(AdsefidWebhookVerificationError):
+        verify_and_parse_webhook(
+            raw_body=body, signature_header=signature, timestamp_header=timestamp, secret=secret
+        )
+
+
+@pytest.mark.parametrize("signature", ["v1=é", "v1=!!!!", "v1=AAAA", "v1="])
+def test_a_malformed_signature_is_a_verification_error_not_a_type_error(signature: str) -> None:
+    body, _, timestamp = _fresh_signature()
+
+    with pytest.raises(AdsefidWebhookVerificationError):
+        verify_and_parse_webhook(
+            raw_body=body,
+            signature_header=signature,
+            timestamp_header=timestamp,
+            secret=VECTOR["secret"],
+        )

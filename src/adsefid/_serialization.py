@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from datetime import datetime
+from decimal import Decimal
+from typing import Any
 
 from .exceptions import AdsefidValidationError
 
@@ -14,16 +16,37 @@ MAX_STATUS_IDS = 2000
 MAX_CANCEL_IDS = 2000
 MIN_RECEIVE_COUNT = 1
 MAX_RECEIVE_COUNT = 499
+MAX_MESSENGER_FILE_BYTES = 15 * 1024 * 1024
+"""Largest Messenger file content, in bytes: 15 MiB, inclusive."""
 MIN_TEMPLATE_TAKE = 1
 MAX_TEMPLATE_TAKE = 100
 
 
+def to_decimal(value: Any) -> Decimal:
+    """Exact `Decimal` for a monetary JSON number.
+
+    The transport decodes JSON with `parse_float=Decimal`, so fractional amounts
+    arrive exact; an integer converts directly.
+    """
+    if isinstance(value, bool) or not isinstance(value, int | Decimal | str):
+        raise TypeError(f"expected a JSON number, got {type(value).__name__}")
+    return Decimal(value)
+
+
+_FRACTION = re.compile(r"(\.\d+)")
+
+
 def parse_datetime(value: str | None) -> datetime | None:
-    """Parse an ISO-8601 timestamp, tolerating a trailing 'Z' (not accepted by
-    datetime.fromisoformat on the Python 3.10 floor)."""
+    """Parse an ISO-8601 timestamp.
+
+    The service sends fractional seconds with up to 7 digits (``...10.4030292+03:30``),
+    and `datetime.fromisoformat` on the Python 3.10 floor accepts only 3 or 6, so the
+    fraction is normalized to 6 digits first. A trailing 'Z' is rewritten as well.
+    """
     if value is None:
         return None
     normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+    normalized = _FRACTION.sub(lambda m: (m.group(1) + "000000")[:7], normalized, count=1)
     return datetime.fromisoformat(normalized)
 
 
@@ -31,12 +54,6 @@ def format_datetime(value: datetime | None) -> str | None:
     if value is None:
         return None
     return value.isoformat()
-
-
-def join_csv(values: Sequence[str] | None) -> str | None:
-    if not values:
-        return None
-    return ",".join(values)
 
 
 def validate_local_id(local_id: str | None, *, field_name: str = "local_id") -> None:
@@ -74,6 +91,13 @@ def validate_max_length(value: str, *, field_name: str, max_length: int) -> None
     if length > max_length:
         raise AdsefidValidationError(
             f"{field_name!r} must be at most {max_length} characters; got {length}"
+        )
+
+
+def validate_file_size(size: int) -> None:
+    if size > MAX_MESSENGER_FILE_BYTES:
+        raise AdsefidValidationError(
+            f"'file' must be at most {MAX_MESSENGER_FILE_BYTES} bytes (15 MiB); got {size}"
         )
 
 

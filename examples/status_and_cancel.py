@@ -5,7 +5,8 @@ call; their combined distinct count may not exceed 2000, which the SDK checks
 before making the request.
 
 Usage:
-    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000XXX python examples/status_and_cancel.py
+    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000 ADSEFID_LINE_SELECTOR=BULK_SERVICE_SEND_BASED \
+        python examples/status_and_cancel.py
 """
 
 from __future__ import annotations
@@ -14,14 +15,19 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 
-from adsefid import AdsefidClient, CancelSmsRequest, SendSingleSmsRequest
+from adsefid import AdsefidClient, CancelSmsRequest, LineSelector, SendSingleSmsRequest
 
 
 def main() -> int:
     api_key = os.environ.get("ADSEFID_API_KEY")
     line_number = os.environ.get("ADSEFID_LINE_NUMBER")
+    selector = os.environ.get("ADSEFID_LINE_SELECTOR")  # needed when the number has several lines
+    line_selector = LineSelector[selector] if selector else None
     if not api_key or not line_number:
-        print("set ADSEFID_API_KEY and ADSEFID_LINE_NUMBER", file=sys.stderr)
+        print(
+            "set ADSEFID_API_KEY and ADSEFID_LINE_NUMBER (ADSEFID_LINE_SELECTOR too when needed)",
+            file=sys.stderr,
+        )
         return 1
 
     with AdsefidClient(api_key=api_key) as client:
@@ -31,6 +37,7 @@ def main() -> int:
             SendSingleSmsRequest(
                 receptor="09120000000",
                 line_number=line_number,
+                line_selector=line_selector,
                 message="This one is scheduled, and about to be cancelled.",
                 send_time=send_at,
                 local_id="demo-cancel-1",

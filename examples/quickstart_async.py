@@ -15,6 +15,7 @@ from adsefid import (
     AdsefidAsyncClient,
     AdsefidRateLimitError,
     AdsefidValidationError,
+    LineSelector,
     SendSingleSmsRequest,
 )
 
@@ -26,8 +27,9 @@ async def main() -> None:
         try:
             result = await client.sms.send_single(
                 SendSingleSmsRequest(
-                    receptor="98912xxxxxxx",
-                    line_number="983000XXX",
+                    receptor=os.environ.get("ADSEFID_RECEPTOR", "989120000000"),
+                    line_number=os.environ.get("ADSEFID_LINE_NUMBER", "983000"),
+                    line_selector=LineSelector.BULK_SERVICE_SEND_BASED,  # see the README
                     message="Hello from adsefid",
                 )
             )

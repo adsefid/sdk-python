@@ -62,7 +62,7 @@ class CancelledMessageItem:
 
 
 @dataclass(frozen=True, slots=True)
-class CancelResult:
+class CancelResponse:
     cancelled_messages: list[CancelledMessageItem]
     failed_to_cancel: list[CancelledMessageItem]
 
@@ -73,7 +73,7 @@ class CancelResult:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> CancelResult:
+    def from_dict(cls, data: dict[str, Any]) -> CancelResponse:
         return cls(
             cancelled_messages=[
                 CancelledMessageItem.from_dict(item) for item in data.get("cancelled_messages", [])
@@ -119,12 +119,12 @@ class StatusReceptor:
 
 
 @dataclass(frozen=True, slots=True)
-class StatusResult:
+class StatusResponse:
     receptors: list[StatusReceptor]
 
     def to_dict(self) -> dict[str, Any]:
         return {"receptors": [item.to_dict() for item in self.receptors]}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> StatusResult:
+    def from_dict(cls, data: dict[str, Any]) -> StatusResponse:
         return cls(receptors=[StatusReceptor.from_dict(item) for item in data.get("receptors", [])])

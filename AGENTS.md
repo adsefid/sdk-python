@@ -24,14 +24,20 @@ notes over an ambiguous doc reading:
   the literal string `"{timestamp}.{raw_body}"`, and the raw digest bytes are Base64-encoded
   directly — there is no intermediate hex-encoding step, even though a literal reading of some
   spec pseudo-code can suggest one. See `src/adsefid/webhooks/verifier.py`.
-- `TemplateParameterType` has an undocumented third value in the wild. The documented, supported
-  public set is `{string, number}`. The live API has been observed to also emit a `url` value for
-  some templates; this SDK intentionally models only the two documented values — do not add
-  support for it without first confirming it against current, documented API behavior. See
-  `src/adsefid/enums.py`.
+- Only documented values get enum members; unknown `LineSelector`, `TemplateState` and `TemplateParameterType` wire
+  values are preserved as raw `int`/`str` via `coerce_enum`, never dropped or raised on. Add a member only
+  for a value the documentation lists. See `src/adsefid/enums.py`.
 - `error.details` uses the shared typed `ApiErrorDetails` shape: optional `errors` maps field names
   (or rejected cancel IDs) to `ApiFieldError`, and optional `items` carries indexed `ApiItemError`
   entries. Preserve unknown numeric codes.
+- `line_selector` is required when the account has two or more lines with the same number. Without
+  it the service answers `LINE_NOT_FOUND` (2002), even for a number the account owns.
+- GET requests are capped at 8,000 characters of path and query. The service's proxy answers an HTML
+  HTTP 414 above 8 KiB, so the documented 2,000-ID status lookup cannot be sent as one GET (about 200
+  IDs fit). The SDK joins IDs with literal commas, drops duplicates, and refuses an oversized GET
+  locally with its validation error. Cancel is a POST and is not affected.
+- Timestamps carry up to 7 fractional digits (`2026-09-19T11:43:10.4030292+03:30`) and mixed offsets;
+  parsers must accept both.
 - Bulk/P2P item validation happens in the API. Validate request-level fields locally, but send item
   values unchanged so valid siblings can still succeed.
 
@@ -39,7 +45,7 @@ notes over an ambiguous doc reading:
 
 ```
 src/adsefid/
-├── __init__.py          public API re-exports (clients, enums, exceptions, every request/result model, webhooks)
+├── __init__.py          public API re-exports (clients, enums, exceptions, every request/response model, webhooks)
 ├── py.typed             PEP 561 marker — do not remove
 ├── client.py            AdsefidClient (sync, wraps httpx.Client)
 ├── async_client.py       AdsefidAsyncClient (async, wraps httpx.AsyncClient)
@@ -47,7 +53,7 @@ src/adsefid/
 ├── config.py             ClientConfig
 ├── exceptions.py         full exception hierarchy
 ├── enums.py              LineSelector, WebServiceMessageStatus, WebServiceResponseCode, TemplateState, TemplateParameterType
-├── _serialization.py     to_dict/from_dict helpers, ISO-8601 datetime parse/format, local_id regex + validators, CSV join
+├── _serialization.py     to_dict/from_dict helpers, ISO-8601 datetime parse/format, local_id regex + validators
 ├── resources/
 │   ├── sms.py            SmsResource (sync) + AsyncSmsResource (async) — 7 ops each
 │   ├── messenger.py      MessengerResource + AsyncMessengerResource — 7 ops each (incl. upload_file)
@@ -70,7 +76,7 @@ src/adsefid/
 2. Add one sync method to the resource class in `resources/<area>.py`, and the structurally identical `async def` method to the `Async<Area>Resource` class in the same file. The two classes must stay parallel: same method names, same parameter order, same validation calls, same shape of return.
 3. Any client-side pre-flight rule (max length, required field, `local_id` shape, count limits) goes in `_serialization.py` as a small named validator function and is called from the resource method *before* the request is built — never inline `if` checks scattered across resource methods. Note `validate_max_length` counts **UTF-16 code units**, matching the service; Python's `len()` counts code points and would accept an over-long message containing non-BMP characters.
 4. Add rows to the request-building, response-parsing and validation tests for the new endpoint.
-5. Re-export anything new that belongs in the public surface from `adsefid/__init__.py` (every request/result model is exported there; `tests/test_exports.py` checks `__all__` resolves).
+5. Re-export anything new that belongs in the public surface from `adsefid/__init__.py` (every request/response model is exported there; `tests/test_exports.py` checks `__all__` resolves).
 
 ## Hard rules
 
@@ -97,14 +103,23 @@ src/adsefid/
   Base64-encoded in the panel, and the service signs with the **decoded** bytes.
   `verify_and_parse_webhook` decodes before keying the HMAC, and also accepts raw `bytes`. Keying
   the HMAC with the UTF-8 bytes of the Base64 string does not verify against the live service.
+- **Money is `Decimal`.** `_base.parse_success_data` decodes JSON with `parse_float=Decimal` and
+  `to_decimal` builds `cost`/`total_cost`/`credit_left`; never route money through `float`.
+- **An empty webhook key never verifies**, and the signature is compared as decoded digest bytes.
+- **Malformed bodies are `AdsefidTransportError`.** Resources build models through `parse_object`/
+  `parse_list` in `_base.py`, which turn `KeyError`/`TypeError`/`ValueError` into a transport error.
+  A 2xx that is not a success envelope is a transport error; a non-2xx without an error envelope is an
+  `AdsefidApiError` (`-1`, `UNKNOWN_ERROR`), and any 429 is an `AdsefidRateLimitError`.
+- **`_request` is private**, and `with_options(timeout=)` derives a client sharing the connection pool.
+- **Uploads** require `content_type` and are capped at `MAX_MESSENGER_FILE_BYTES` (15 MiB).
 - `WebServiceMessageStatus` and `WebServiceResponseCode` are the two enums most likely to grow ahead of doc updates — they're parsed permissively (unknown int falls back to a raw int field rather than raising). Don't "fix" this into a hard `IntEnum(value)` call that would crash on a new server-side code.
 
 ## Commands
 
 ```bash
-pip install -e ".[dev]"   # ruff + mypy + build + pytest
-make lint                 # ruff check + ruff format --check + mypy
+make deps                 # uv sync --extra dev (ruff + mypy + pytest)
+make lint                 # ruff check + ruff format --check + mypy, through uv
 make fmt                  # ruff format .
-make build                # python -m build (sdist + wheel)
-make test                 # python -m pytest
+make build                # uv build (sdist + wheel)
+make test                 # pytest
 ```

@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
-from .._serialization import format_datetime, parse_datetime
+from .._serialization import format_datetime, parse_datetime, to_decimal
 from ..enums import (
     ERROR_CODE_MIN,
     LineSelector,
     WebServiceMessageStatus,
     WebServiceResponseCode,
+    coerce_enum,
     parse_message_status,
     parse_response_code,
 )
@@ -48,14 +50,14 @@ class SendSingleSmsRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class SendSingleSmsResult:
+class SendSingleSmsResponse:
     group_id: str
     local_id: str | None
     status: WebServiceMessageStatus | None
     raw_status: int
     line_number: str
-    line_selector: LineSelector
-    cost: float
+    line_selector: LineSelector | int
+    cost: Decimal
     receptor: str
     send_time: datetime | None
     message_id: str
@@ -63,7 +65,7 @@ class SendSingleSmsResult:
     hide: bool
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendSingleSmsResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendSingleSmsResponse:
         status, raw_status = parse_message_status(data["status"])
         return cls(
             group_id=data["group_id"],
@@ -71,8 +73,8 @@ class SendSingleSmsResult:
             status=status,
             raw_status=raw_status,
             line_number=data["line_number"],
-            line_selector=LineSelector(data["line_selector"]),
-            cost=float(data["cost"]),
+            line_selector=coerce_enum(LineSelector, data["line_selector"]),
+            cost=to_decimal(data["cost"]),
             receptor=data["receptor"],
             send_time=parse_datetime(data.get("send_time")),
             message_id=data["message_id"],
@@ -130,7 +132,7 @@ class BulkReceptorResult:
     status: WebServiceMessageStatus | None
     raw_status: int
     hide: bool
-    cost: float
+    cost: Decimal
 
     @property
     def error_code(self) -> WebServiceResponseCode | None:
@@ -154,25 +156,25 @@ class BulkReceptorResult:
             status=status,
             raw_status=raw_status,
             hide=data["hide"],
-            cost=float(data["cost"]),
+            cost=to_decimal(data["cost"]),
         )
 
 
 @dataclass(frozen=True, slots=True)
-class SendBulkSmsResult:
+class SendBulkSmsResponse:
     group_id: str
     receptors: list[BulkReceptorResult]
     message: str
     segment_count: int
     send_time: datetime | None
     line_number: str
-    line_selector: LineSelector
+    line_selector: LineSelector | int
     counts: dict[str, int]
     total_count: int
-    total_cost: float
+    total_cost: Decimal
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendBulkSmsResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendBulkSmsResponse:
         return cls(
             group_id=data["group_id"],
             receptors=[BulkReceptorResult.from_dict(item) for item in data["receptors"]],
@@ -180,10 +182,10 @@ class SendBulkSmsResult:
             segment_count=data["segment_count"],
             send_time=parse_datetime(data.get("send_time")),
             line_number=data["line_number"],
-            line_selector=LineSelector(data["line_selector"]),
+            line_selector=coerce_enum(LineSelector, data["line_selector"]),
             counts=dict(data.get("counts", {})),
             total_count=data["total_count"],
-            total_cost=float(data["total_cost"]),
+            total_cost=to_decimal(data["total_cost"]),
         )
 
 
@@ -193,7 +195,7 @@ class SendBulkSmsResult:
 
 
 @dataclass(frozen=True, slots=True)
-class P2pMessage:
+class P2PMessage:
     receptor: str
     message: str
     local_id: str | None = None
@@ -209,8 +211,8 @@ class P2pMessage:
 
 
 @dataclass(frozen=True, slots=True)
-class SendP2pSmsRequest:
-    messages: list[P2pMessage]
+class SendP2PSmsRequest:
+    messages: list[P2PMessage]
     line_number: str
     line_selector: LineSelector | int | None = None
     send_time: datetime | None = None
@@ -228,7 +230,7 @@ class SendP2pSmsRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class P2pMessageResult:
+class P2PMessageResult:
     message_id: str | None
     receptor: str
     status: WebServiceMessageStatus | None
@@ -237,7 +239,7 @@ class P2pMessageResult:
     message: str
     hide: bool
     segment_count: int
-    cost: float
+    cost: Decimal
 
     @property
     def error_code(self) -> WebServiceResponseCode | None:
@@ -252,7 +254,7 @@ class P2pMessageResult:
         return code
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> P2pMessageResult:
+    def from_dict(cls, data: dict[str, Any]) -> P2PMessageResult:
         status, raw_status = parse_message_status(data["status"])
         return cls(
             message_id=data.get("message_id"),
@@ -263,29 +265,29 @@ class P2pMessageResult:
             message=data["message"],
             hide=data["hide"],
             segment_count=data["segment_count"],
-            cost=float(data["cost"]),
+            cost=to_decimal(data["cost"]),
         )
 
 
 @dataclass(frozen=True, slots=True)
-class SendP2pSmsResult:
+class SendP2PSmsResponse:
     group_id: str
-    messages: list[P2pMessageResult]
+    messages: list[P2PMessageResult]
     send_time: datetime | None
     line_number: str
-    line_selector: LineSelector
-    total_cost: float
+    line_selector: LineSelector | int
+    total_cost: Decimal
     counts: dict[str, int]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendP2pSmsResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendP2PSmsResponse:
         return cls(
             group_id=data["group_id"],
-            messages=[P2pMessageResult.from_dict(item) for item in data["messages"]],
+            messages=[P2PMessageResult.from_dict(item) for item in data["messages"]],
             send_time=parse_datetime(data.get("send_time")),
             line_number=data["line_number"],
-            line_selector=LineSelector(data["line_selector"]),
-            total_cost=float(data["total_cost"]),
+            line_selector=coerce_enum(LineSelector, data["line_selector"]),
+            total_cost=to_decimal(data["total_cost"]),
             counts=dict(data.get("counts", {})),
         )
 
@@ -322,7 +324,7 @@ class SendTemplateSmsRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class SendTemplateSmsResult:
+class SendTemplateSmsResponse:
     group_id: str
     message_id: str
     status: WebServiceMessageStatus | None
@@ -332,15 +334,15 @@ class SendTemplateSmsResult:
     template_id: str
     send_time: datetime | None
     expiry_date: datetime | None
-    line_selector: LineSelector
-    cost: float
+    line_selector: LineSelector | int
+    cost: Decimal
     receptor: str
     message: str
     segment_count: int
     parameters: dict[str, TemplateParameterValue]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendTemplateSmsResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendTemplateSmsResponse:
         status, raw_status = parse_message_status(data["status"])
         return cls(
             group_id=data["group_id"],
@@ -352,8 +354,8 @@ class SendTemplateSmsResult:
             template_id=data["template_id"],
             send_time=parse_datetime(data.get("send_time")),
             expiry_date=parse_datetime(data.get("expiry_date")),
-            line_selector=LineSelector(data["line_selector"]),
-            cost=float(data["cost"]),
+            line_selector=coerce_enum(LineSelector, data["line_selector"]),
+            cost=to_decimal(data["cost"]),
             receptor=data["receptor"],
             message=data["message"],
             segment_count=data["segment_count"],
@@ -403,11 +405,11 @@ class ReceivedSmsMessage:
 
 
 @dataclass(frozen=True, slots=True)
-class GetReceivedSmsResult:
+class GetReceivedSmsResponse:
     messages: list[ReceivedSmsMessage]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> GetReceivedSmsResult:
+    def from_dict(cls, data: dict[str, Any]) -> GetReceivedSmsResponse:
         return cls(
             messages=[ReceivedSmsMessage.from_dict(item) for item in data.get("messages", [])]
         )
