@@ -303,6 +303,6 @@ To work on the SDK: `make deps` (uses `uv`), then `make lint`, `make test` and `
 
 ## Versioning and license
 
-Semantic Versioning, independent of the API documentation. SDK version **0.6.0**, verified
+Semantic Versioning, independent of the API documentation. SDK version **1.0.0**, verified
 against API documentation **v1.14.0**. Releases use `v<version>` tags. See
 [CHANGELOG.md](CHANGELOG.md). MIT licensed, see [LICENSE](LICENSE).
