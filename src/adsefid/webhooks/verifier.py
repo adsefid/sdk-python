@@ -36,14 +36,19 @@ def _decode_secret(secret: str | bytes) -> bytes:
     the decoded key already may pass `bytes` straight through.
     """
     if isinstance(secret, bytes | bytearray):
-        return bytes(secret)
-    try:
-        return base64.b64decode(secret.strip(), validate=True)
-    except (ValueError, binascii.Error) as exc:
-        raise AdsefidWebhookVerificationError(
-            "Webhook secret is not valid Base64; use the secret exactly as shown "
-            "in your adsefid.com panel, or pass the decoded key as bytes"
-        ) from exc
+        key = bytes(secret)
+    else:
+        try:
+            key = base64.b64decode(secret.strip(), validate=True)
+        except (ValueError, binascii.Error) as exc:
+            raise AdsefidWebhookVerificationError(
+                "Webhook secret is not valid Base64; use the secret exactly as shown "
+                "in your adsefid.com panel, or pass the decoded key as bytes"
+            ) from exc
+    if not key:
+        # An empty HMAC key signs anything, so it must never verify.
+        raise AdsefidWebhookVerificationError("Webhook signing key is empty")
+    return key
 
 
 def verify_and_parse_webhook(
@@ -86,11 +91,16 @@ def verify_and_parse_webhook(
     # bytes concatenation to avoid a decode/re-encode round trip of the raw body.
     signing_input = f"{timestamp}.".encode() + body_bytes
     expected_digest = hmac.new(key, signing_input, hashlib.sha256).digest()
-    expected_signature = base64.b64encode(expected_digest).decode("ascii")
 
+    # Compare decoded digest bytes: str comparison would raise TypeError on a
+    # non-ASCII header value instead of rejecting it.
     # Signature first, then freshness — the sibling SDKs check in this order, so
     # the same request reports the same failure everywhere.
-    if not hmac.compare_digest(expected_signature, provided_signature):
+    try:
+        provided_digest = base64.b64decode(provided_signature, validate=True)
+    except (ValueError, binascii.Error):
+        provided_digest = b""
+    if not hmac.compare_digest(expected_digest, provided_digest):
         raise AdsefidWebhookVerificationError("Webhook signature mismatch")
 
     age = abs(int(time.time()) - timestamp)

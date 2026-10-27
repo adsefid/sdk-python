@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Any
 
 import httpx
 
-from ._base import build_request_kwargs, parse_success_data, wrap_transport_error
+from ._base import QueryValue, build_request_kwargs, parse_success_data, wrap_transport_error
 from .config import DEFAULT_BASE_URL, DEFAULT_TIMEOUT_SECONDS, DEFAULT_USER_AGENT, ClientConfig
 from .resources.messenger import AsyncMessengerResource
 from .resources.sms import AsyncSmsResource
@@ -32,16 +33,17 @@ class AdsefidAsyncClient:
 
         Args:
             api_key: Sent as the `X-API-KEY` header on every request.
-            base_url: API origin; override only to target a non-production environment.
-            timeout: Per-request timeout in seconds, passed to `httpx.AsyncClient`.
-                Ignored if `http_client` is given.
+            base_url: API origin, an absolute http(s) URL; override only to target a
+                non-production environment.
+            timeout: Per-request timeout in seconds, a positive finite number,
+                passed to `httpx.AsyncClient`. Ignored if `http_client` is given.
             user_agent: Value sent in the `User-Agent` header. Defaults to
                 `adsefid-python/<SDK_VERSION>`.
-            http_client: A pre-configured `httpx.AsyncClient` to use instead of
-                constructing one from `timeout`. Requests always carry the absolute URL
-                built from `base_url`, so the supplied client needs no `base_url` of its
-                own. When supplied, this SDK does not close it on `aclose()`/`__aexit__`
-                — the caller owns its lifecycle.
+            http_client: A pre-configured `httpx.AsyncClient` to use instead of constructing
+                one from `timeout`. Requests always carry the absolute URL built from
+                `base_url`, so the supplied client needs no `base_url` of its own. When
+                supplied, this SDK does not close it on `aclose()`/`__aexit__` — the
+                caller owns its lifecycle.
         """
         self._config = ClientConfig(
             api_key=api_key,
@@ -49,30 +51,40 @@ class AdsefidAsyncClient:
             timeout=timeout,
             user_agent=user_agent,
         )
-        self._http_client = http_client or httpx.AsyncClient(base_url=base_url, timeout=timeout)
+        self._http_client = http_client or httpx.AsyncClient(timeout=timeout)
         self._owns_http_client = http_client is None
+        self._request_timeout: float | None = None
+        self._bind_resources()
 
+    def _bind_resources(self) -> None:
         self.sms = AsyncSmsResource(self)
         self.messenger = AsyncMessengerResource(self)
         self.user = AsyncUserResource(self)
 
-    async def request(
+    def with_options(self, *, timeout: float) -> AdsefidAsyncClient:
+        """Return a client that shares this one's connection pool but uses `timeout` seconds.
+
+        Use it to bound a single call (`client.with_options(timeout=5).sms.send_single(...)`).
+        Closing the returned client never closes the shared `httpx.AsyncClient`.
+        """
+        config = replace(self._config, timeout=timeout)
+        clone = object.__new__(AdsefidAsyncClient)
+        clone._config = config
+        clone._http_client = self._http_client
+        clone._owns_http_client = False
+        clone._request_timeout = timeout
+        clone._bind_resources()
+        return clone
+
+    async def _request(
         self,
         method: str,
         path: str,
         *,
         json_body: dict[str, Any] | None = None,
-        query_params: Mapping[str, str | int | None] | None = None,
+        query_params: Mapping[str, QueryValue] | None = None,
         files: dict[str, Any] | None = None,
     ) -> dict[str, Any] | list[Any]:
-        """Send a raw request against the API and return the parsed `data` payload.
-
-        Used internally by the resource classes (`.sms`, `.messenger`, `.user`);
-        exposed publicly so callers can reach an endpoint not yet wrapped by a
-        resource method. Raises `AdsefidTransportError` on a network-level failure,
-        or an `AdsefidApiError`/`AdsefidRateLimitError` subclass on a non-success
-        response.
-        """
         kwargs = build_request_kwargs(
             method=method,
             base_url=self._config.base_url,
@@ -83,9 +95,11 @@ class AdsefidAsyncClient:
             query_params=query_params,
             files=files,
         )
+        if self._request_timeout is not None:
+            kwargs["timeout"] = self._request_timeout
         try:
             response = await self._http_client.request(**kwargs)
-        except httpx.TransportError as exc:
+        except httpx.RequestError as exc:
             raise wrap_transport_error(exc) from exc
         return parse_success_data(response.status_code, response.content)
 

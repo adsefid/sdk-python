@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
-from .._serialization import parse_datetime
-from ..enums import LineSelector, TemplateParameterType, TemplateState
+from .._serialization import parse_datetime, to_decimal
+from ..enums import LineSelector, TemplateParameterType, TemplateState, coerce_enum
 
 # --------------------------------------------------------------------------
 # 6.1 GET /v1/user/info
@@ -15,20 +16,20 @@ from ..enums import LineSelector, TemplateParameterType, TemplateState
 @dataclass(frozen=True, slots=True)
 class AccountInfo:
     name: str
-    company_name: str
-    credit_left: float
-    email: str
-    phone: str
+    company_name: str | None
+    credit_left: Decimal
+    email: str | None
+    phone: str | None
     account_status: str
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AccountInfo:
         return cls(
             name=data["name"],
-            company_name=data["company_name"],
-            credit_left=float(data["credit_left"]),
-            email=data["email"],
-            phone=data["phone"],
+            company_name=data.get("company_name"),
+            credit_left=to_decimal(data["credit_left"]),
+            email=data.get("email"),
+            phone=data.get("phone"),
             account_status=data["account_status"],
         )
 
@@ -41,7 +42,7 @@ class AccountInfo:
 @dataclass(frozen=True, slots=True)
 class UserLine:
     line_number: str
-    line_selector: LineSelector
+    line_selector: LineSelector | int
     line_name: str
     enabled: bool
 
@@ -49,7 +50,7 @@ class UserLine:
     def from_dict(cls, data: dict[str, Any]) -> UserLine:
         return cls(
             line_number=data["line_number"],
-            line_selector=LineSelector(data["line_selector"]),
+            line_selector=coerce_enum(LineSelector, data["line_selector"]),
             line_name=data["line_name"],
             enabled=data["enabled"],
         )
@@ -97,8 +98,8 @@ class GetTemplatesRequest:
 class UserTemplate:
     template_id: str
     content: str
-    parameters: dict[str, TemplateParameterType]
-    state: TemplateState
+    parameters: dict[str, TemplateParameterType | str]
+    state: TemplateState | str
     description: str | None
     created_at: datetime | None
     updated_at: datetime | None
@@ -106,19 +107,14 @@ class UserTemplate:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> UserTemplate:
         raw_parameters: dict[str, str] = data.get("parameters", {})
-        parameters: dict[str, TemplateParameterType] = {}
-        for key, value in raw_parameters.items():
-            try:
-                parameters[key] = TemplateParameterType(value)
-            except ValueError:
-                # Server has been observed to emit an undocumented "url" type;
-                # skip strong-typing values outside the documented public set.
-                continue
+        parameters: dict[str, TemplateParameterType | str] = {
+            key: coerce_enum(TemplateParameterType, value) for key, value in raw_parameters.items()
+        }
         return cls(
             template_id=data["template_id"],
             content=data["content"],
             parameters=parameters,
-            state=TemplateState(data["state"]),
+            state=coerce_enum(TemplateState, data["state"]),
             description=data.get("description"),
             created_at=parse_datetime(data.get("created_at")),
             updated_at=parse_datetime(data.get("updated_at")),
@@ -126,12 +122,12 @@ class UserTemplate:
 
 
 @dataclass(frozen=True, slots=True)
-class GetUserTemplatesResult:
+class GetUserTemplatesResponse:
     items: list[UserTemplate]
     total: int
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> GetUserTemplatesResult:
+    def from_dict(cls, data: dict[str, Any]) -> GetUserTemplatesResponse:
         return cls(
             items=[UserTemplate.from_dict(item) for item in data.get("items", [])],
             total=data["total"],

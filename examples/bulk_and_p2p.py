@@ -6,7 +6,8 @@ WebServiceCode the service sent; `status` names it when the item was accepted
 and `error_code` names it when that one receptor was rejected.
 
 Usage:
-    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000XXX python examples/bulk_and_p2p.py
+    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000 ADSEFID_LINE_SELECTOR=BULK_SERVICE_SEND_BASED \
+        python examples/bulk_and_p2p.py
 """
 
 from __future__ import annotations
@@ -19,14 +20,15 @@ from adsefid import (
     AdsefidClient,
     BulkReceptor,
     BulkReceptorResult,
-    P2pMessage,
-    P2pMessageResult,
+    LineSelector,
+    P2PMessage,
+    P2PMessageResult,
     SendBulkSmsRequest,
-    SendP2pSmsRequest,
+    SendP2PSmsRequest,
 )
 
 
-def describe(item: BulkReceptorResult | P2pMessageResult) -> str:
+def describe(item: BulkReceptorResult | P2PMessageResult) -> str:
     label = item.local_id or "-"
     if item.error_code is not None or item.raw_status >= 2000:
         reason = item.error_code.name if item.error_code is not None else "UNKNOWN"
@@ -39,8 +41,13 @@ def describe(item: BulkReceptorResult | P2pMessageResult) -> str:
 def main() -> int:
     api_key = os.environ.get("ADSEFID_API_KEY")
     line_number = os.environ.get("ADSEFID_LINE_NUMBER")
+    selector = os.environ.get("ADSEFID_LINE_SELECTOR")  # needed when the number has several lines
+    line_selector = LineSelector[selector] if selector else None
     if not api_key or not line_number:
-        print("set ADSEFID_API_KEY and ADSEFID_LINE_NUMBER", file=sys.stderr)
+        print(
+            "set ADSEFID_API_KEY and ADSEFID_LINE_NUMBER (ADSEFID_LINE_SELECTOR too when needed)",
+            file=sys.stderr,
+        )
         return 1
 
     with AdsefidClient(api_key=api_key) as client:
@@ -51,6 +58,7 @@ def main() -> int:
             bulk = client.sms.send_bulk(
                 SendBulkSmsRequest(
                     line_number=line_number,
+                    line_selector=line_selector,
                     message="Scheduled maintenance tonight from 01:00 to 03:00.",
                     receptors=[
                         BulkReceptor(receptor="09120000000", local_id="maint-1"),
@@ -69,15 +77,16 @@ def main() -> int:
 
         # A different message per receptor, in one request.
         p2p = client.sms.send_p2p(
-            SendP2pSmsRequest(
+            SendP2PSmsRequest(
                 line_number=line_number,
+                line_selector=line_selector,
                 messages=[
-                    P2pMessage(
+                    P2PMessage(
                         receptor="09120000000",
                         message="Hi Ali, your order #1001 shipped.",
                         local_id="ship-1001",
                     ),
-                    P2pMessage(
+                    P2PMessage(
                         receptor="09120000001",
                         message="Hi Reza, your order #1002 shipped.",
                         local_id="ship-1002",

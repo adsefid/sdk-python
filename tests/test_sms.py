@@ -11,9 +11,9 @@ from adsefid import AdsefidValidationError, WebServiceMessageStatus, WebServiceR
 from adsefid.models.sms import (
     BulkReceptor,
     CancelSmsRequest,
-    P2pMessage,
+    P2PMessage,
     SendBulkSmsRequest,
-    SendP2pSmsRequest,
+    SendP2PSmsRequest,
     SendSingleSmsRequest,
     SendTemplateSmsRequest,
 )
@@ -129,10 +129,10 @@ async def test_send_p2p_partial_success_is_not_an_error(make_client) -> None:
 
     result = await unwrap(
         client.sms.send_p2p(
-            SendP2pSmsRequest(
+            SendP2PSmsRequest(
                 messages=[
-                    P2pMessage(receptor="a", message="x"),
-                    P2pMessage(receptor="", message=""),
+                    P2PMessage(receptor="a", message="x"),
+                    P2PMessage(receptor="", message=""),
                 ],
                 line_number="3000xxxx",
             )
@@ -275,7 +275,7 @@ async def test_get_received(make_client) -> None:
             id="no receptors",
         ),
         pytest.param(
-            lambda c: c.sms.send_p2p(SendP2pSmsRequest(messages=[], line_number="3000")),
+            lambda c: c.sms.send_p2p(SendP2PSmsRequest(messages=[], line_number="3000")),
             id="no messages",
         ),
         pytest.param(lambda c: c.sms.get_status(), id="status with neither id list"),

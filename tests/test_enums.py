@@ -62,20 +62,19 @@ class TestPermissiveParsing:
         assert parse_response_code(2999) == (None, 2999)
 
 
-class TestUndocumentedParameterType:
-    """The live service emits a third parameter type this SDK does not model."""
+class TestUnknownParameterType:
+    """A parameter type this SDK does not model must still be representable."""
 
     def test_it_is_absent_from_the_enum(self) -> None:
         with pytest.raises(ValueError):
-            TemplateParameterType("url")
+            TemplateParameterType("future_type")
 
-    def test_the_fixture_still_carries_it(self) -> None:
-        # If the service ever stops sending it, this fixture should be revisited
-        # in all five SDKs at once.
+    def test_the_fixture_carries_one(self) -> None:
+        # Revisit this fixture in all five SDKs at once.
         parameters = fixture_json("envelopes/user.get_templates.unknown_type.json")["data"][
             "items"
         ][0]["parameters"]
-        assert parameters["link"] == "url"
+        assert parameters["link"] == "future_type"
 
 
 class TestSerializeTemplateParameters:

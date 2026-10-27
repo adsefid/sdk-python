@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
-from .._serialization import format_datetime, parse_datetime
+from .._serialization import format_datetime, parse_datetime, to_decimal
 from ..enums import (
     ERROR_CODE_MIN,
     WebServiceMessageStatus,
@@ -47,7 +48,7 @@ class SendSingleMessengerRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class SendSingleMessengerResult:
+class SendSingleMessengerResponse:
     group_id: str
     message_id: str
     status: WebServiceMessageStatus | None
@@ -55,13 +56,13 @@ class SendSingleMessengerResult:
     receptor: str
     local_id: str | None
     hide: bool
-    cost: float
+    cost: Decimal
     send_time: datetime | None
     profile: str
     messenger: str
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendSingleMessengerResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendSingleMessengerResponse:
         status, raw_status = parse_message_status(data["status"])
         return cls(
             group_id=data["group_id"],
@@ -71,7 +72,7 @@ class SendSingleMessengerResult:
             receptor=data["receptor"],
             local_id=data.get("local_id"),
             hide=data["hide"],
-            cost=float(data["cost"]),
+            cost=to_decimal(data["cost"]),
             send_time=parse_datetime(data.get("send_time")),
             profile=data["profile"],
             messenger=data["messenger"],
@@ -127,7 +128,7 @@ class MessengerBulkReceptorResult:
     hide: bool
     status: WebServiceMessageStatus | None
     raw_status: int
-    cost: float
+    cost: Decimal
 
     @property
     def error_code(self) -> WebServiceResponseCode | None:
@@ -151,31 +152,31 @@ class MessengerBulkReceptorResult:
             hide=data["hide"],
             status=status,
             raw_status=raw_status,
-            cost=float(data["cost"]),
+            cost=to_decimal(data["cost"]),
         )
 
 
 @dataclass(frozen=True, slots=True)
-class SendBulkMessengerResult:
+class SendBulkMessengerResponse:
     group_id: str
     receptors: list[MessengerBulkReceptorResult]
     message: str
     send_time: datetime | None
     total_count: int
-    total_cost: float
+    total_cost: Decimal
     counts: dict[str, int]
     profile: str
     messenger: str
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendBulkMessengerResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendBulkMessengerResponse:
         return cls(
             group_id=data["group_id"],
             receptors=[MessengerBulkReceptorResult.from_dict(item) for item in data["receptors"]],
             message=data["message"],
             send_time=parse_datetime(data.get("send_time")),
             total_count=data["total_count"],
-            total_cost=float(data["total_cost"]),
+            total_cost=to_decimal(data["total_cost"]),
             counts=dict(data.get("counts", {})),
             profile=data["profile"],
             messenger=data["messenger"],
@@ -188,7 +189,7 @@ class SendBulkMessengerResult:
 
 
 @dataclass(frozen=True, slots=True)
-class MessengerP2pReceptor:
+class MessengerP2PReceptor:
     receptor: str
     message: str
     local_id: str | None = None
@@ -204,8 +205,8 @@ class MessengerP2pReceptor:
 
 
 @dataclass(frozen=True, slots=True)
-class SendP2pMessengerRequest:
-    receptors: list[MessengerP2pReceptor]
+class SendP2PMessengerRequest:
+    receptors: list[MessengerP2PReceptor]
     profile: str
     send_time: datetime | None = None
     file_id: str | None = None
@@ -223,7 +224,7 @@ class SendP2pMessengerRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class MessengerP2pReceptorResult:
+class MessengerP2PReceptorResult:
     message_id: str | None
     receptor: str
     message: str
@@ -231,7 +232,7 @@ class MessengerP2pReceptorResult:
     hide: bool
     status: WebServiceMessageStatus | None
     raw_status: int
-    cost: float
+    cost: Decimal
 
     @property
     def error_code(self) -> WebServiceResponseCode | None:
@@ -246,7 +247,7 @@ class MessengerP2pReceptorResult:
         return code
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> MessengerP2pReceptorResult:
+    def from_dict(cls, data: dict[str, Any]) -> MessengerP2PReceptorResult:
         status, raw_status = parse_message_status(data["status"])
         return cls(
             message_id=data.get("message_id"),
@@ -256,29 +257,29 @@ class MessengerP2pReceptorResult:
             hide=data["hide"],
             status=status,
             raw_status=raw_status,
-            cost=float(data["cost"]),
+            cost=to_decimal(data["cost"]),
         )
 
 
 @dataclass(frozen=True, slots=True)
-class SendP2pMessengerResult:
+class SendP2PMessengerResponse:
     group_id: str
-    receptors: list[MessengerP2pReceptorResult]
+    receptors: list[MessengerP2PReceptorResult]
     send_time: datetime | None
     total_count: int
-    total_cost: float
+    total_cost: Decimal
     counts: dict[str, int]
     profile: str
     messenger: str
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendP2pMessengerResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendP2PMessengerResponse:
         return cls(
             group_id=data["group_id"],
-            receptors=[MessengerP2pReceptorResult.from_dict(item) for item in data["receptors"]],
+            receptors=[MessengerP2PReceptorResult.from_dict(item) for item in data["receptors"]],
             send_time=parse_datetime(data.get("send_time")),
             total_count=data["total_count"],
-            total_cost=float(data["total_cost"]),
+            total_cost=to_decimal(data["total_cost"]),
             counts=dict(data.get("counts", {})),
             profile=data["profile"],
             messenger=data["messenger"],
@@ -291,11 +292,11 @@ class SendP2pMessengerResult:
 
 
 @dataclass(frozen=True, slots=True)
-class UploadMessengerFileResult:
+class UploadMessengerFileResponse:
     file_id: str
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> UploadMessengerFileResult:
+    def from_dict(cls, data: dict[str, Any]) -> UploadMessengerFileResponse:
         return cls(file_id=data["file_id"])
 
 
@@ -347,7 +348,7 @@ class SendTemplateMessengerRequest:
 
 
 @dataclass(frozen=True, slots=True)
-class SendTemplateMessengerResult:
+class SendTemplateMessengerResponse:
     group_id: str
     message_id: str
     status: WebServiceMessageStatus | None
@@ -356,7 +357,7 @@ class SendTemplateMessengerResult:
     template_id: str
     send_time: datetime | None
     expiry_date: datetime | None
-    cost: float
+    cost: Decimal
     receptor: str
     message: str
     profile: str
@@ -364,7 +365,7 @@ class SendTemplateMessengerResult:
     parameters: dict[str, TemplateParameterValue]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> SendTemplateMessengerResult:
+    def from_dict(cls, data: dict[str, Any]) -> SendTemplateMessengerResponse:
         status, raw_status = parse_message_status(data["status"])
         return cls(
             group_id=data["group_id"],
@@ -375,7 +376,7 @@ class SendTemplateMessengerResult:
             template_id=data["template_id"],
             send_time=parse_datetime(data.get("send_time")),
             expiry_date=parse_datetime(data.get("expiry_date")),
-            cost=float(data["cost"]),
+            cost=to_decimal(data["cost"]),
             receptor=data["receptor"],
             message=data["message"],
             profile=data["profile"],

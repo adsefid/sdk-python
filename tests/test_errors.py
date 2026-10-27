@@ -173,14 +173,28 @@ async def test_a_500_with_an_html_body(make_client) -> None:
 
     assert not isinstance(caught.value, AdsefidRateLimitError)
     assert caught.value.http_status_code == 500
-    assert caught.value.name == "HTTP_500"
+    assert caught.value.name == "UNKNOWN_ERROR"
+    assert caught.value.code == -1
 
 
 async def test_a_bare_429_is_still_a_rate_limit(make_client) -> None:
     client, _ = make_client(status_code=429, content=fixture_bytes("errors/error.not_json.txt"))
 
-    with pytest.raises(AdsefidRateLimitError):
+    with pytest.raises(AdsefidRateLimitError) as caught:
         await unwrap(client.user.get_info())
+
+    assert caught.value.code == 2036
+    assert caught.value.name == "RATE_LIMITED"
+
+
+async def test_any_429_with_an_envelope_is_a_rate_limit(make_client) -> None:
+    body = b'{"status":"error","error":{"code":2024,"name":"INVALID_PARAMETER"}}'
+    client, _ = make_client(status_code=429, content=body)
+
+    with pytest.raises(AdsefidRateLimitError) as caught:
+        await unwrap(client.user.get_info())
+
+    assert caught.value.code == 2024
 
 
 @pytest.mark.parametrize(
@@ -191,10 +205,10 @@ async def test_a_bare_429_is_still_a_rate_limit(make_client) -> None:
         pytest.param(b'{"status":"partial","data":{}}', id="unrecognized status word"),
     ],
 )
-async def test_a_body_that_is_not_an_envelope_is_an_api_error(make_client, body) -> None:
+async def test_a_2xx_body_that_is_not_an_envelope_is_a_transport_error(make_client, body) -> None:
     client, _ = make_client(status_code=200, content=body)
 
-    with pytest.raises(AdsefidApiError):
+    with pytest.raises(AdsefidTransportError):
         await unwrap(client.user.get_info())
 
 
@@ -272,3 +286,23 @@ async def test_a_success_payload_of_the_wrong_shape_is_a_transport_error(
 
     with pytest.raises(AdsefidTransportError):
         await unwrap(call(client))
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param(b'{"status":"success","data":{"items":[]}}', id="total missing"),
+        pytest.param(
+            b'{"status":"success","data":{"items":[{"template_id":"t"}],"total":1}}',
+            id="item field missing",
+        ),
+        pytest.param(b'{"status":"success","data":{"items":"x","total":1}}', id="items not a list"),
+    ],
+)
+async def test_a_malformed_model_body_is_a_transport_error_not_a_key_error(
+    make_client, body
+) -> None:
+    client, _ = make_client(status_code=200, content=body)
+
+    with pytest.raises(AdsefidTransportError):
+        await unwrap(client.user.get_templates())

@@ -7,7 +7,8 @@ its leading zeros and Decimal("1.50") its trailing zero, where the numbers 1234
 and 1.5 would not.
 
 Usage:
-    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000XXX python examples/templates.py
+    ADSEFID_API_KEY=... ADSEFID_LINE_NUMBER=983000 ADSEFID_LINE_SELECTOR=BULK_SERVICE_SEND_BASED \
+        python examples/templates.py
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from decimal import Decimal
 
 from adsefid import (
     AdsefidClient,
+    LineSelector,
     SendTemplateSmsRequest,
     TemplateParameterType,
     TemplateState,
@@ -60,8 +62,13 @@ def pick_approved_template(client: AdsefidClient) -> UserTemplate:
 def main() -> int:
     api_key = os.environ.get("ADSEFID_API_KEY")
     line_number = os.environ.get("ADSEFID_LINE_NUMBER")
+    selector = os.environ.get("ADSEFID_LINE_SELECTOR")  # needed when the number has several lines
+    line_selector = LineSelector[selector] if selector else None
     if not api_key or not line_number:
-        print("set ADSEFID_API_KEY and ADSEFID_LINE_NUMBER", file=sys.stderr)
+        print(
+            "set ADSEFID_API_KEY and ADSEFID_LINE_NUMBER (ADSEFID_LINE_SELECTOR too when needed)",
+            file=sys.stderr,
+        )
         return 1
 
     with AdsefidClient(api_key=api_key) as client:
@@ -84,6 +91,7 @@ def main() -> int:
                 parameters=parameters,  # type: ignore[arg-type]
                 receptor="09120000000",
                 line_number=line_number,
+                line_selector=line_selector,
                 expiry_date=datetime.now(timezone.utc) + timedelta(minutes=10),
             )
         )

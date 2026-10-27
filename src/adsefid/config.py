@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
+from urllib.parse import urlsplit
 
 from .exceptions import AdsefidValidationError
 
@@ -29,7 +31,10 @@ class ClientConfig:
         # 401 from the service. The sibling SDKs reject it at construction too.
         if not self.api_key.strip():
             raise AdsefidValidationError("api_key is required and must be non-blank")
-        if not self.base_url.strip():
-            raise AdsefidValidationError("base_url is required and must be non-blank")
+        parts = urlsplit(self.base_url.strip())
+        if parts.scheme not in ("http", "https") or not parts.netloc:
+            raise AdsefidValidationError("base_url must be an absolute http(s) URL")
+        if not math.isfinite(self.timeout) or self.timeout <= 0:
+            raise AdsefidValidationError("timeout must be a positive, finite number of seconds")
         if not self.user_agent.strip() or "\r" in self.user_agent or "\n" in self.user_agent:
             raise AdsefidValidationError("user_agent must be non-blank and contain no line breaks")

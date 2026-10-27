@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import email
+import io
 from pathlib import Path
 
 import pytest
 
 from adsefid import AdsefidValidationError, WebServiceResponseCode
+from adsefid._serialization import MAX_MESSENGER_FILE_BYTES
 from adsefid.models.messenger import (
     CancelMessengerRequest,
     MessengerBulkReceptor,
-    MessengerP2pReceptor,
+    MessengerP2PReceptor,
     SendBulkMessengerRequest,
-    SendP2pMessengerRequest,
+    SendP2PMessengerRequest,
     SendSingleMessengerRequest,
     SendTemplateMessengerRequest,
 )
@@ -78,10 +80,10 @@ async def test_send_p2p_partial_success_is_not_an_error(make_client) -> None:
 
     result = await unwrap(
         client.messenger.send_p2p(
-            SendP2pMessengerRequest(
+            SendP2PMessengerRequest(
                 receptors=[
-                    MessengerP2pReceptor(receptor="a", message="m"),
-                    MessengerP2pReceptor(receptor="", message=""),
+                    MessengerP2PReceptor(receptor="a", message="m"),
+                    MessengerP2PReceptor(receptor="", message=""),
                 ],
                 profile="p",
             )
@@ -170,8 +172,8 @@ class TestBuildFilesPayload:
     """`upload_file` accepts a path, raw bytes, or an open binary file."""
 
     def test_bytes_default_to_a_generic_filename(self) -> None:
-        payload = _build_files_payload(b"data", None, None)
-        assert payload["file"] == ("file", b"data", None)
+        payload = _build_files_payload(b"data", None, "application/octet-stream")
+        assert payload["file"] == ("file", b"data", "application/octet-stream")
 
     def test_bytes_keep_an_explicit_filename(self) -> None:
         payload = _build_files_payload(b"data", "report.csv", "text/csv")
@@ -193,6 +195,25 @@ class TestBuildFilesPayload:
             payload = _build_files_payload(handle, None, "image/png")
             assert payload["file"][0] == "banner.png"
             assert payload["file"][1] is handle
+
+    @pytest.mark.parametrize(
+        ("size", "accepted"),
+        [(MAX_MESSENGER_FILE_BYTES, True), (MAX_MESSENGER_FILE_BYTES + 1, False)],
+    )
+    def test_the_size_limit_is_inclusive(self, size: int, accepted: bool) -> None:
+        source = b"\0" * size
+        if accepted:
+            assert _build_files_payload(source, None, "video/mp4")["file"][1] == source
+            assert _build_files_payload(io.BytesIO(source), "a.mp4", "video/mp4")
+        else:
+            with pytest.raises(AdsefidValidationError):
+                _build_files_payload(source, None, "video/mp4")
+            with pytest.raises(AdsefidValidationError):
+                _build_files_payload(io.BytesIO(source), "a.mp4", "video/mp4")
+
+    def test_a_blank_content_type_is_rejected(self) -> None:
+        with pytest.raises(AdsefidValidationError):
+            _build_files_payload(b"x", None, "")
 
 
 @pytest.mark.parametrize(

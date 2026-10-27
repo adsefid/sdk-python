@@ -1,6 +1,9 @@
-"""Enumerations defined by the adsefid.com Web Service API (doc v1.13.0, section 3)."""
+"""Enumerations defined by the adsefid.com Web Service API (doc section 3)."""
 
 from enum import Enum, IntEnum
+from typing import Any, TypeVar
+
+_E = TypeVar("_E", bound=Enum)
 
 
 class LineSelector(IntEnum):
@@ -101,9 +104,9 @@ class TemplateState(str, Enum):
 class TemplateParameterType(str, Enum):
     """See doc section 3.6.
 
-    The doc's complete public set is {string, number}. The real server has
-    been observed to also emit an undocumented "url" value; it is
-    intentionally not exposed here pending a doc update.
+    The doc's complete public set is {string, number}. A type the server adds
+    later has no member here, but it is preserved as a plain `str` in
+    `UserTemplate.parameters`.
     """
 
     STRING = "string"
@@ -137,3 +140,11 @@ def parse_response_code(value: int) -> tuple[WebServiceResponseCode | None, int]
         return WebServiceResponseCode(value), value
     except ValueError:
         return None, value
+
+
+def coerce_enum(enum_type: type[_E], value: Any) -> _E | Any:
+    """Return the enum member for `value`, or `value` unchanged if the SDK does not know it yet."""
+    try:
+        return enum_type(value)
+    except ValueError:
+        return value
