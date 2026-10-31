@@ -187,15 +187,19 @@ class MessengerResource:
         local_ids: Sequence[str] | None = None,
     ) -> StatusResponse:
         """Look up delivery status for previously sent messages
-        (`GET /v1/messenger/status`).
+        (`QUERY /v1/messenger/status`).
 
         At least one of `message_ids`/`local_ids` is required; their combined
         distinct count must not exceed `MAX_STATUS_IDS`. Raises
         AdsefidValidationError otherwise.
         """
         validate_ids_count(message_ids, local_ids)
-        params = {"message_ids": message_ids, "local_ids": local_ids}
-        data = self._client._request("GET", "/v1/messenger/status", query_params=params)
+        params = {
+            key: list(dict.fromkeys(ids))
+            for key, ids in (("message_ids", message_ids), ("local_ids", local_ids))
+            if ids
+        }
+        data = self._client._request("QUERY", "/v1/messenger/status", json_body=params)
         return parse_object(StatusResponse.from_dict, data)
 
 
@@ -263,6 +267,10 @@ class AsyncMessengerResource:
         local_ids: Sequence[str] | None = None,
     ) -> StatusResponse:
         validate_ids_count(message_ids, local_ids)
-        params = {"message_ids": message_ids, "local_ids": local_ids}
-        data = await self._client._request("GET", "/v1/messenger/status", query_params=params)
+        params = {
+            key: list(dict.fromkeys(ids))
+            for key, ids in (("message_ids", message_ids), ("local_ids", local_ids))
+            if ids
+        }
+        data = await self._client._request("QUERY", "/v1/messenger/status", json_body=params)
         return parse_object(StatusResponse.from_dict, data)

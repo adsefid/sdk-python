@@ -60,7 +60,8 @@ def main() -> int:
             f"failed to cancel {len(cancelled.failed_to_cancel)}"
         )
         for item in cancelled.failed_to_cancel:
-            print(f"  {item.message_id} could not be cancelled: {item.status}")
+            outcome = item.error_code or item.status or item.raw_status
+            print(f"  {item.message_id or item.local_id} could not be cancelled: {outcome}")
 
         # Inbound messages. count must be 1..499; since filters by arrival time.
         received = client.sms.get_received(

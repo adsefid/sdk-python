@@ -9,7 +9,7 @@ messages, reads inbound SMS, looks up account data, and verifies signed webhooks
 client and an async client with the same methods.
 
 It needs Python 3.10 or later and [`httpx`](https://www.python-httpx.org/), its only dependency.
-It is fully typed (`py.typed`) and verified against API documentation **v1.14.0**. Sibling SDKs
+It is fully typed (`py.typed`) and verified against API documentation **v1.15.0**. Sibling SDKs
 exist for .NET, Go, JavaScript and PHP with the same shape.
 
 ## Install
@@ -68,7 +68,7 @@ level `adsefid` package.
 
 **Line selector.** An account can own several lines with the same number, each with its own
 selector (see `client.user.get_lines()`). When it does, `line_selector` is required on every SMS
-send; without it the service answers `LINE_NOT_FOUND`.
+send; without it the service answers `INVALID_LINE_SELECTOR`.
 
 ## Configuration
 
@@ -100,15 +100,17 @@ amount the service sent.
 | Resource | Methods | Endpoint |
 |---|---|---|
 | `client.sms` | `send_single`, `send_bulk`, `send_p2p`, `send_template` | `POST /v1/sms/{single,bulk,p2p,template}` |
-| `client.sms` | `get_status(message_ids=, local_ids=)`, `cancel`, `get_received(line_number=, count=, since=)` | `GET /v1/sms/status`, `POST /v1/sms/cancel`, `GET /v1/sms/receive` |
+| `client.sms` | `get_status(message_ids=, local_ids=)`, `cancel`, `get_received(line_number=, count=, since=)` | `QUERY /v1/sms/status`, `POST /v1/sms/cancel`, `GET /v1/sms/receive` |
 | `client.messenger` | `send_single`, `send_bulk`, `send_p2p`, `send_template` | `POST /v1/messenger/{single,bulk,p2p,template}` |
 | `client.messenger` | `upload_file(file, filename=, content_type=)` | `POST /v1/messenger/file` |
-| `client.messenger` | `get_status(message_ids=, local_ids=)`, `cancel` | `GET /v1/messenger/status`, `POST /v1/messenger/cancel` |
+| `client.messenger` | `get_status(message_ids=, local_ids=)`, `cancel` | `QUERY /v1/messenger/status`, `POST /v1/messenger/cancel` |
 | `client.user` | `get_info`, `get_lines`, `get_profiles`, `get_templates(state=, skip=, take=)` | `GET /v1/user/{info,lines,profiles,templates}` |
 
 Request and response types are frozen dataclasses whose fields mirror the API's snake_case JSON.
 Cancel accepts messages that are awaiting approval, queued or scheduled, with no refund, and at
-most 2,000 distinct IDs across both lists. Status lookups are GET requests, so the URL caps them at about 200 IDs per call. The SDK raises a validation error past 8,000 URL characters instead of letting the gateway answer HTTP 414.
+most 2,000 distinct IDs across both lists. Status lookups use `QUERY` with JSON arrays, supporting up to 2,000 distinct IDs in one request.
+Unmatched cancellation IDs appear in `failed_to_cancel` with error codes 2046 or 2029; a missing
+local ID match has a null message ID. Check each item's status or error code.
 
 ## Bulk and P2P: partial success is not an error
 
@@ -214,7 +216,7 @@ except AdsefidTransportError as e:
 
 `e.code` is a `WebServiceResponseCode` when known and a plain `int` otherwise. A non-2xx response
 with no error envelope has code `-1` and name `UNKNOWN_ERROR`. A bare 429 has code 2036 and name
-`RATE_LIMITED`. `details.errors` maps field names (or rejected cancel IDs) to field errors, and
+`RATE_LIMITED`. `details.errors` maps field names to field errors, and
 `details.items` carries indexed bulk/P2P errors. The SDK sends each request once and never
 retries. Pass an `httpx` client with a retrying transport if you want backoff.
 
@@ -304,5 +306,5 @@ To work on the SDK: `make deps` (uses `uv`), then `make lint`, `make test` and `
 ## Versioning and license
 
 Semantic Versioning, independent of the API documentation. SDK version **1.0.0**, verified
-against API documentation **v1.14.0**. Releases use `v<version>` tags. See
+against API documentation **v1.15.0**. Releases use `v<version>` tags. See
 [CHANGELOG.md](CHANGELOG.md). MIT licensed, see [LICENSE](LICENSE).

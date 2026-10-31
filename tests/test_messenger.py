@@ -132,8 +132,9 @@ async def test_get_status(make_client) -> None:
 
     request = recorder.only
     assert request.path == "/v1/messenger/status"
-    assert request.params["message_ids"] == "m1"
-    assert request.params["local_ids"] == "l1"
+    assert request.method == "QUERY"
+    assert not request.params
+    assert request.json == {"message_ids": ["m1"], "local_ids": ["l1"]}
 
 
 async def test_upload_file_sends_multipart(make_client) -> None:

@@ -200,16 +200,16 @@ async def test_send_template_echoes_parameters_back(make_client) -> None:
     assert result.expiry_date is not None
 
 
-async def test_get_status_joins_ids_into_csv_query_params(make_client) -> None:
+async def test_get_status_sends_a_query_json_body(make_client) -> None:
     client, recorder = make_client(content=fixture_bytes("envelopes/sms.get_status.success.json"))
 
     await unwrap(client.sms.get_status(message_ids=["m1", "m2"], local_ids=["l1"]))
 
     request = recorder.only
-    assert request.method == "GET"
+    assert request.method == "QUERY"
     assert request.path == "/v1/sms/status"
-    assert request.params["message_ids"] == "m1,m2"
-    assert request.params["local_ids"] == "l1"
+    assert not request.params
+    assert request.json == {"message_ids": ["m1", "m2"], "local_ids": ["l1"]}
 
 
 async def test_cancel(make_client) -> None:
