@@ -6,7 +6,12 @@ from decimal import Decimal
 from typing import Any
 
 from .._serialization import format_datetime, parse_datetime
-from ..enums import WebServiceMessageStatus, parse_message_status
+from ..enums import (
+    WebServiceMessageStatus,
+    WebServiceResponseCode,
+    parse_message_status,
+    parse_response_code,
+)
 
 TemplateParameterValue = str | int | float | Decimal
 """A value bound to one named template parameter.
@@ -38,10 +43,18 @@ def serialize_template_parameters(
 
 @dataclass(frozen=True, slots=True)
 class CancelledMessageItem:
-    message_id: str
+    """A cancellation outcome, including per-identifier errors for unmatched IDs."""
+
+    message_id: str | None
     local_id: str | None
     status: WebServiceMessageStatus | None
     raw_status: int
+
+    @property
+    def error_code(self) -> WebServiceResponseCode | None:
+        """Return the named error for an unmatched ID, or None for a message status."""
+        code, _ = parse_response_code(self.raw_status)
+        return code
 
     def to_dict(self) -> dict[str, Any]:
         return {

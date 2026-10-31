@@ -60,7 +60,7 @@ async def test_get_templates_parses_the_documented_shape(make_client) -> None:
     assert item.state is TemplateState.APPROVED
     assert item.parameters["OTPCode"] is TemplateParameterType.STRING
     assert item.parameters["amount"] is TemplateParameterType.NUMBER
-    assert item.description is None
+    assert item.description == ""
 
 
 async def test_get_templates_preserves_unknown_parameter_types(make_client) -> None:
@@ -78,6 +78,7 @@ async def test_get_templates_preserves_unknown_parameter_types(make_client) -> N
         "amount": "number",
     }
     assert result.items[0].parameters["link"] == "future_type"
+    assert result.items[0].description is None
 
 
 async def test_get_templates_omits_absent_query_params(make_client) -> None:

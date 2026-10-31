@@ -104,7 +104,7 @@ class TemplateState(str, Enum):
 class TemplateParameterType(str, Enum):
     """See doc section 3.6.
 
-    The doc's complete public set is {string, number}. A type the server adds
+    The public named types are {string, number}. A type the server adds
     later has no member here, but it is preserved as a plain `str` in
     `UserTemplate.parameters`.
     """

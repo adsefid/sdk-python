@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from adsefid import AdsefidValidationError, CancelMessengerRequest, CancelSmsRequest
+from adsefid import (
+    AdsefidValidationError,
+    CancelMessengerRequest,
+    CancelSmsRequest,
+    WebServiceMessageStatus,
+    WebServiceResponseCode,
+)
 from tests.conftest import unwrap
 from tests.helpers.fixtures import fixture_bytes
 
@@ -49,3 +55,23 @@ async def test_cancel_counts_distinct_ids_and_preserves_body(
             for key, value in (("message_ids", message_ids), ("local_ids", local_ids))
             if value
         }
+
+
+@pytest.mark.parametrize("area", ["sms", "messenger"])
+async def test_cancel_preserves_nullable_ids_and_item_errors(make_client, area: str) -> None:
+    client, recorder = make_client(content=fixture_bytes("envelopes/cancel.partial_success.json"))
+    request = (
+        CancelSmsRequest(local_ids=["missing-local"])
+        if area == "sms"
+        else CancelMessengerRequest(local_ids=["missing-local"])
+    )
+    result = await unwrap(getattr(client, area).cancel(request))
+    assert result.cancelled_messages[0].status is WebServiceMessageStatus.CANCELED
+    assert [item.raw_status for item in result.failed_to_cancel] == [1001, 2046, 2029, 2999]
+    assert result.failed_to_cancel[1].local_id is None
+    assert result.failed_to_cancel[2].message_id is None
+    assert result.failed_to_cancel[1].error_code is WebServiceResponseCode.INVALID_MESSAGE_IDS
+    assert result.failed_to_cancel[2].error_code is WebServiceResponseCode.INVALID_LOCAL_IDS
+    assert result.failed_to_cancel[3].error_code is None
+    assert result.failed_to_cancel[2].to_dict()["message_id"] is None
+    assert len(recorder.requests) == 1
